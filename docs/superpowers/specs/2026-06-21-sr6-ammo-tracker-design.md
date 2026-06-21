@@ -18,7 +18,8 @@ In scope:
 - Multiple characters, each with their own weapons and ammo.
 - Per-weapon ammunition tracking: magazine, reload, reserve pool, multiple ammo
   types, free-text notes.
-- Manual `+`/`-` round counting (no firing-mode automation).
+- Firing-mode buttons (tap a mode to subtract its round cost) **plus** manual
+  `+`/`-` and set-value as fallback and for corrections.
 - Import a character from a Shadowrun 6 `sr6char` XML export.
 - JSON export/import for backup and device migration.
 
@@ -66,6 +67,10 @@ table over years. The data volume does not justify a backend or a build step.
   ammo type.
 - `ammoCategory` — which reserve category this weapon draws from
   (e.g. `ammo_rifles`).
+- `firingModes` — array of `{ mode, rounds }` the weapon supports, where `mode`
+  is a label (e.g. `SS`, `SA`, `BF`, `FA`) and `rounds` is the number of rounds
+  that mode spends per attack. Seeded from the weapons lookup table, editable per
+  weapon (rules and house rules vary).
 - `notes` — free text.
 
 ### ReservePool entry
@@ -74,6 +79,9 @@ table over years. The data volume does not justify a backend or a build step.
 
 ## Core Operations (model.js, pure functions)
 
+- **Fire (mode)** — subtract the selected firing mode's `rounds` from
+  `loaded.count`, floored at 0. (If the magazine has fewer rounds than the mode
+  would spend, it empties to 0 rather than going negative.)
 - **Spend** — subtract 1 (or N) from `loaded.count`, floored at 0.
 - **Add** — add 1 (or N) back to `loaded.count`, capped at `magazineCapacity`.
 - **Set value** — set `loaded.count` directly (manual correction).
@@ -96,8 +104,10 @@ to `localStorage` immediately by the store layer.
    - Rename, delete.
 
 2. **Character sheet**
-   - One card per weapon: name + mount badge, `loaded / capacity`, `-` / `+` /
-     `Reload` controls, currently-loaded ammo type, notes.
+   - One card per weapon: name + mount badge, `loaded / capacity`, a row of
+     firing-mode buttons (only the modes that weapon supports, each labeled with
+     its round cost), `-` / `+` / set-value / `Reload` controls, currently-loaded
+     ammo type, notes.
    - A **Reserve ammo** section listing each pool by category and type with edit
      controls.
 
@@ -111,9 +121,9 @@ Parses the `sr6char` XML format into a new Character.
   `uniqueid`. Tag each weapon's `mount` from its source (carried vs. the
   containing drone/vehicle name where derivable).
 - **Lookup:** resolve each `ref` against `weapons-db.js`
-  (`ref → { name, magazineCapacity, ammoCategory }`). Unknown refs fall back to a
-  prettified name (underscores → spaces, title case) and a placeholder magazine
-  capacity the user edits.
+  (`ref → { name, magazineCapacity, ammoCategory, firingModes }`). Unknown refs
+  fall back to a prettified name (underscores → spaces, title case), a placeholder
+  magazine capacity, and a default firing-mode set the user edits.
 - **Ammo reserves:** map `type="AMMUNITION"` items into reserve pools, where
   `ref` is the category, `choice` is the ammo type, and `count` is the quantity.
 - **Non-destructive:** import always creates a *new* character. It never
@@ -121,10 +131,13 @@ Parses the `sr6char` XML format into a new Character.
 
 ## Weapons Lookup Table (weapons-db.js)
 
-A static map of `ref → { name, magazineCapacity, ammoCategory }`. Seeded with the
+A static map of
+`ref → { name, magazineCapacity, ammoCategory, firingModes }`. Seeded with the
 weapons in the sample export (`ares_predator_vi`, `fn_har`,
-`remington_roomsweeper`) plus common SR6 firearms. All values are editable by the
-user after import, so coverage gaps degrade gracefully.
+`remington_roomsweeper`) plus common SR6 firearms, including each weapon's
+default supported firing modes and per-mode round costs. All values are editable
+by the user after import, so coverage gaps degrade gracefully (unknown weapons
+get a sensible default mode set the user can adjust).
 
 ## File Layout
 
