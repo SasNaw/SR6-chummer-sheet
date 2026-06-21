@@ -85,9 +85,24 @@ table over years. The data volume does not justify a backend or a build step.
 - **Spend** — subtract 1 (or N) from `loaded.count`, floored at 0.
 - **Add** — add 1 (or N) back to `loaded.count`, capped at `magazineCapacity`.
 - **Set value** — set `loaded.count` directly (manual correction).
-- **Reload** — choose an `ammoType` available in the weapon's matching reserve
-  pool, refill the magazine toward `magazineCapacity`, and decrement that reserve
-  by the number of rounds actually loaded (can be partial if reserve is low).
+- **Reload** — refill the magazine from a matching reserve pool. The matching
+  key is `ammoCategory`: only reserve pools whose `ammoCategory` equals the
+  weapon's are eligible. Algorithm:
+  1. Gather reserve pools where `ammoCategory == weapon.ammoCategory`. If none,
+     reload is a no-op and the UI tells the user (offer: add a pool, or set the
+     count manually).
+  2. Choose the ammo `type`: if the category has a single type, use it; if
+     several (e.g. regular and APDS), prompt the user.
+  3. **Type switch with rounds still loaded:** if the chosen type differs from
+     `loaded.ammoType` and `loaded.count > 0`, return those leftover rounds to
+     the reserve pool for `(weapon.ammoCategory, loaded.ammoType)` — creating
+     that pool if it doesn't exist — and set `loaded.count` to 0. Nothing is
+     wasted.
+  4. `need = magazineCapacity − loaded.count`.
+  5. `loaded = min(need, chosenPool.count)` — capped by what's in the pool, so a
+     low reserve yields a partial reload.
+  6. Decrement the chosen pool by the rounds loaded, add them to `loaded.count`,
+     and set `loaded.ammoType` to the chosen type.
 - **Edit reserves** — adjust reserve counts and add/remove pools.
 - **Edit weapon** — name, magazine capacity, ammo category, mount, notes.
 
