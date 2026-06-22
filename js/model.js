@@ -50,3 +50,65 @@ export function addRounds(weapon, n = 1) {
 export function setLoaded(weapon, n) {
   return withCount(weapon, clamp(n, 0, weapon.magazineCapacity));
 }
+
+export function matchingReserves(character, weaponId) {
+  const w = character.weapons.find((x) => x.id === weaponId);
+  if (!w) return [];
+  return character.reserves.filter((r) => r.ammoCategory === w.ammoCategory);
+}
+
+function reserveIndex(reserves, ammoCategory, ammoType) {
+  return reserves.findIndex((r) => r.ammoCategory === ammoCategory && r.ammoType === ammoType);
+}
+
+export function reload(character, weaponId, chosenType) {
+  const wIdx = character.weapons.findIndex((x) => x.id === weaponId);
+  if (wIdx === -1) return character;
+  const weapon = character.weapons[wIdx];
+  const reserves = character.reserves.map((r) => ({ ...r }));
+
+  if (reserveIndex(reserves, weapon.ammoCategory, chosenType) === -1) return character;
+
+  let loaded = { ...weapon.loaded };
+  if (loaded.count > 0 && loaded.ammoType !== chosenType) {
+    const backIdx = reserveIndex(reserves, weapon.ammoCategory, loaded.ammoType);
+    if (backIdx === -1) {
+      reserves.push({ ammoCategory: weapon.ammoCategory, ammoType: loaded.ammoType, count: loaded.count });
+    } else {
+      reserves[backIdx] = { ...reserves[backIdx], count: reserves[backIdx].count + loaded.count };
+    }
+    loaded = { ...loaded, count: 0 };
+  }
+
+  const pIdx = reserveIndex(reserves, weapon.ammoCategory, chosenType);
+  const need = weapon.magazineCapacity - loaded.count;
+  const take = Math.min(need, reserves[pIdx].count);
+  reserves[pIdx] = { ...reserves[pIdx], count: reserves[pIdx].count - take };
+  loaded = { ammoType: chosenType, count: loaded.count + take };
+
+  const weapons = character.weapons.map((x, i) => (i === wIdx ? { ...x, loaded } : x));
+  return { ...character, weapons, reserves };
+}
+
+export function addReserve(character, pool) {
+  const reserves = character.reserves.map((r) => ({ ...r }));
+  const idx = reserveIndex(reserves, pool.ammoCategory, pool.ammoType);
+  if (idx === -1) reserves.push({ ...pool });
+  else reserves[idx] = { ...reserves[idx], count: reserves[idx].count + pool.count };
+  return { ...character, reserves };
+}
+
+export function setReserveCount(character, ammoCategory, ammoType, count) {
+  const reserves = character.reserves.map((r) =>
+    (r.ammoCategory === ammoCategory && r.ammoType === ammoType
+      ? { ...r, count: Math.max(0, count) } : r));
+  return { ...character, reserves };
+}
+
+export function removeReserve(character, ammoCategory, ammoType) {
+  return {
+    ...character,
+    reserves: character.reserves.filter(
+      (r) => !(r.ammoCategory === ammoCategory && r.ammoType === ammoType)),
+  };
+}
