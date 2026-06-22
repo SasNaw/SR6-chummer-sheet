@@ -2,10 +2,19 @@ import { el, openModal } from './dom.js';
 import { getState, mutate } from '../app.js';
 import {
   fire, spend, addRounds, setLoaded, reload, matchingReserves,
-  updateWeapon, removeWeapon, addReserve, setReserveCount, removeReserve,
+  updateWeapon, removeWeapon, addWeapon, addReserve, setReserveCount, removeReserve,
   createWeapon, createReservePool, upsertCharacter,
 } from '../model.js';
 import { AMMO_CATEGORIES, AMMO_TYPES, categoryName, typeName } from '../ammo-db.js';
+
+// Standard SR6 firing modes offered when creating a weapon (round cost per mode;
+// editable later via the weapon's edit dialog).
+const STANDARD_FIRING_MODES = [
+  { mode: 'SS', rounds: 1 },
+  { mode: 'SA', rounds: 1 },
+  { mode: 'BF', rounds: 3 },
+  { mode: 'FA', rounds: 6 },
+];
 
 // Apply a Character->Character transform to the active character.
 function updateCharacter(characterId, fn) {
@@ -226,6 +235,59 @@ function openAddPoolModal(c) {
   ]);
 }
 
+// Modal to create a weapon: name, weapon type (ammo category), capacity, where to
+// add (carried or an existing drone), and toggle buttons for available firing modes.
+function openAddWeaponModal(c) {
+  const nameInput = el('input', { type: 'text', placeholder: 'Weapon name' });
+  const typeSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
+    el('option', { value: ref }, name)));
+  const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
+  capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
+
+  // Where to add: Weapons (carried) or one of the character's existing drones.
+  const droneMounts = [...new Set(c.weapons.filter((w) => w.mount !== 'carried').map((w) => w.mount))];
+  const whereSel = el('select', {}, [
+    el('option', { value: 'carried' }, 'Weapons (carried)'),
+    ...droneMounts.map((m) => el('option', { value: m }, m)),
+  ]);
+
+  // Firing-mode toggle buttons.
+  const selected = new Set();
+  const modeButtons = STANDARD_FIRING_MODES.map((m) => {
+    const btn = el('button', { type: 'button', class: 'toggle' }, `${m.mode} (${m.rounds})`);
+    btn.addEventListener('click', () => {
+      if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
+      else { selected.add(m.mode); btn.classList.add('on'); }
+    });
+    return btn;
+  });
+
+  const close = openModal('Add weapon', [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Name'), nameInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Weapon type'), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Max ammo capacity'), capInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Add to'), whereSel]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, 'Firing modes'), el('div', { class: 'modes' }, modeButtons)]),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const weapon = createWeapon({
+            name: nameInput.value.trim() || 'New Weapon',
+            ammoCategory: typeSel.value,
+            magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
+            mount: whereSel.value,
+            firingModes: STANDARD_FIRING_MODES.filter((m) => selected.has(m.mode)).map((m) => ({ ...m })),
+          });
+          close();
+          updateCharacter(c.id, (ch) => addWeapon(ch, weapon));
+        },
+      }, 'Add'),
+    ]),
+  ]);
+}
+
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
   for (const w of weapons) list.append(weaponCard(c, w, { stashable }));
@@ -251,9 +313,7 @@ export function renderSheet(container, characterId) {
   container.append(el('div', { class: 'group' }, [
     el('div', { class: 'section-title' }, [
       el('h2', {}, 'Weapons'),
-      el('button', {
-        onclick: () => updateCharacter(c.id, (ch) => ({ ...ch, weapons: [...ch.weapons, createWeapon({ name: 'New Weapon', magazineCapacity: 10 })] })),
-      }, '+ Weapon'),
+      el('button', { onclick: () => openAddWeaponModal(c) }, '+ Weapon'),
     ]),
     el('div', { class: 'subgroup-title' }, 'Equipped'),
     carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, 'Nothing equipped.'),

@@ -45,6 +45,7 @@ h2 { font-size: 16px; margin: 0; }
 .group { display: grid; gap: 10px; }
 .subgroup-title { color: var(--text); opacity: 0.8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; }
 .card-foot { display: flex; justify-content: flex-end; }
+.toggle.on { background: var(--accent); color: #1a1300; border-color: var(--accent); font-weight: 600; }
 .carried-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .carried-toggle input { width: auto; min-height: 0; }
 .hint { color: var(--accent); font-size: 13px; min-height: 18px; }
