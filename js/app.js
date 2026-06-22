@@ -1,6 +1,7 @@
 import { loadState, saveState } from './store.js';
 import { el, clear } from './ui/dom.js';
 import { renderPicker } from './ui/character-picker.js';
+import { renderSheet } from './ui/character-sheet.js';
 
 let state = loadState();
 let view = { name: 'picker', characterId: null };
@@ -17,9 +18,10 @@ function render() {
   clear(root);
 
   if (view.name === 'sheet') {
+    const c = state.characters.find((x) => x.id === view.characterId);
     header.append(el('button', { class: 'icon', onclick: goPicker, title: 'Back' }, '‹'));
-    header.append(el('h1', {}, 'Character'));
-    root.append(el('p', { class: 'muted' }, 'Sheet view — added in Task 12.'));
+    header.append(el('h1', {}, c ? c.name : 'Character'));
+    renderSheet(root, view.characterId);
     return;
   }
 
