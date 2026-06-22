@@ -49,8 +49,12 @@ export function renderIoBar(container, { onImported }) {
   const importJson = el('button', {
     onclick: () => readFile('.json,application/json', (text) => {
       const incoming = deserialize(text);
+      if (incoming.characters.length === 0) {
+        alert('No characters found in that file — nothing imported.');
+        return;
+      }
       mutate((s) => mergeState(s, incoming));
-      alert('Backup imported.');
+      alert(`Imported ${incoming.characters.length} character(s).`);
     }),
   }, 'Import JSON');
 

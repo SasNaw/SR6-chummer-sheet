@@ -92,14 +92,24 @@ function editWeapon(c, w) {
   const cap = parseInt(prompt('Magazine capacity:', String(w.magazineCapacity)) ?? '', 10);
   const cat = prompt(`Ammo category ref (e.g. ${Object.keys(AMMO_CATEGORIES).join(', ')}):`, w.ammoCategory || '');
   const mount = prompt('Mount (carried or a vehicle name):', w.mount);
+  const modesStr = prompt(
+    'Firing modes as MODE:rounds, comma-separated (e.g. SA:1, BF:3, FA:6). Leave blank for none:',
+    w.firingModes.map((m) => `${m.mode}:${m.rounds}`).join(', '));
   const notes = prompt('Notes:', w.notes);
-  updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, {
+  const changes = {
     name,
     magazineCapacity: Number.isInteger(cap) ? cap : w.magazineCapacity,
     ammoCategory: cat || null,
     mount: mount || 'carried',
-    notes: notes ?? '',
-  }));
+    notes: notes !== null ? notes : w.notes,
+  };
+  if (modesStr !== null) {
+    changes.firingModes = modesStr.split(',').map((part) => {
+      const [mode, rounds] = part.split(':').map((s) => s.trim());
+      return { mode, rounds: parseInt(rounds, 10) };
+    }).filter((m) => m.mode && Number.isInteger(m.rounds) && m.rounds >= 0);
+  }
+  updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, changes));
 }
 
 function reserveSection(c) {
