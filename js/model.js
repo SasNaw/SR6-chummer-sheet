@@ -115,3 +115,24 @@ export function removeReserve(character, ammoCategory, ammoType) {
       (r) => !(r.ammoCategory === ammoCategory && r.ammoType === ammoType)),
   };
 }
+
+export function addWeapon(character, weapon) {
+  return { ...character, weapons: [...character.weapons, { ...weapon }] };
+}
+
+export function updateWeapon(character, weaponId, changes) {
+  return {
+    ...character,
+    weapons: character.weapons.map((w) => (w.id === weaponId ? { ...w, ...changes } : w)),
+  };
+}
+
+export function removeWeapon(character, weaponId) {
+  return { ...character, weapons: character.weapons.filter((w) => w.id !== weaponId) };
+}
+
+export function upsertCharacter(characters, character) {
+  const idx = characters.findIndex((c) => c.id === character.id);
+  if (idx === -1) return [...characters, character];
+  return characters.map((c, i) => (i === idx ? character : c));
+}
