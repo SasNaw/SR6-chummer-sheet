@@ -23,6 +23,11 @@ test('createWeapon honours an explicit id and loaded value', () => {
   assert.deepEqual(w.loaded, { ammoType: 'APDS', count: 5 });
 });
 
+test('createWeapon defaults stashed to false and honours an explicit value', () => {
+  assert.equal(createWeapon({ name: 'X' }).stashed, false);
+  assert.equal(createWeapon({ name: 'X', stashed: true }).stashed, true);
+});
+
 test('createCharacter builds an empty character', () => {
   const c = createCharacter({ name: 'S4T0' });
   assert.equal(c.name, 'S4T0');

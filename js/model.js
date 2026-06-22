@@ -8,7 +8,7 @@ export function createReservePool(props = {}) {
 export function createWeapon(props = {}) {
   const {
     name = '', ref = '', mount = 'carried', magazineCapacity = 0,
-    ammoCategory = null, firingModes = [], loaded, notes = '', id,
+    ammoCategory = null, firingModes = [], loaded, notes = '', stashed = false, id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
@@ -16,6 +16,7 @@ export function createWeapon(props = {}) {
     firingModes: firingModes.map((m) => ({ ...m })),
     loaded: loaded ? { ...loaded } : { ammoType: 'regular', count: 0 },
     notes,
+    stashed,
   };
 }
 
