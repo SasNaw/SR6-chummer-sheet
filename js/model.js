@@ -99,6 +99,9 @@ export function addReserve(character, pool) {
 }
 
 export function setReserveCount(character, ammoCategory, ammoType, count) {
+  if (!character.reserves.some((r) => r.ammoCategory === ammoCategory && r.ammoType === ammoType)) {
+    return character;
+  }
   const reserves = character.reserves.map((r) =>
     (r.ammoCategory === ammoCategory && r.ammoType === ammoType
       ? { ...r, count: Math.max(0, count) } : r));

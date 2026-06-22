@@ -69,3 +69,8 @@ test('setReserveCount and removeReserve manage pools', () => {
   c = removeReserve(c, 'ammo_rifles', 'regular');
   assert.equal(c.reserves.length, 0);
 });
+
+test('setReserveCount is a no-op (same reference) when the pool is absent', () => {
+  const c = setup([]);
+  assert.strictEqual(setReserveCount(c, 'ammo_rifles', 'regular', 5), c);
+});
