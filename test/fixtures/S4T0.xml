@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sr6char debt="15000" karmaF="12" karmaI="5" magic="mundane" meta="human" nuyen="3535">
+   <chargen>prio</chargen>
+   <chargenSettings>{&#x0022;variant&#x0022;:&#x0022;STANDARD&#x0022;,&#x0022;priorities&#x0022;:{&#x0022;MAGIC&#x0022;:&#x0022;E&#x0022;,&#x0022;SKILLS&#x0022;:&#x0022;C&#x0022;,&#x0022;RESOURCES&#x0022;:&#x0022;B&#x0022;,&#x0022;METATYPE&#x0022;:&#x0022;D&#x0022;,&#x0022;ATTRIBUTE&#x0022;:&#x0022;A&#x0022;},&#x0022;mysticAdeptMaxPoints&#x0022;:0,&#x0022;mysticAdeptPowerPoints&#x0022;:0,&#x0022;usedKarma&#x0022;:5,&#x0022;perAttrib&#x0022;:{&#x0022;AGILITY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:2,&#x0022;karma&#x0022;:0},&#x0022;STRENGTH&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:1},&#x0022;MAGIC&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;RESONANCE&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;INTUITION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:4,&#x0022;karma&#x0022;:0},&#x0022;LOGIC&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:6,&#x0022;karma&#x0022;:0},&#x0022;WILLPOWER&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:1,&#x0022;karma&#x0022;:1},&#x0022;BODY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:4,&#x0022;karma&#x0022;:0},&#x0022;CHARISMA&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:3,&#x0022;karma&#x0022;:0},&#x0022;REACTION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:4,&#x0022;karma&#x0022;:0},&#x0022;EDGE&#x0022;:{&#x0022;adjust&#x0022;:4,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0}},&#x0022;karmaMod&#x0022;:0}</chargenSettings>
+   <name>S4T0</name>
+   <realname>Kenji &#x0022;Ken&#x0022; Sato</realname>
+   <attributes>
+      <attribute id="BODY" start="5" value="5"/>
+      <attribute id="AGILITY" start="4" value="4"/>
+      <attribute id="REACTION" start="5" value="5"/>
+      <attribute id="STRENGTH" start="2" value="2"/>
+      <attribute id="WILLPOWER" start="3" value="3"/>
+      <attribute id="LOGIC" start="7" value="7"/>
+      <attribute id="INTUITION" start="5" value="5"/>
+      <attribute id="CHARISMA" start="3" value="3"/>
+      <attribute id="EDGE" start="5" value="5"/>
+      <attribute id="MAGIC" value="0"/>
+      <attribute id="RESONANCE" value="0"/>
+      <attribute id="HEAT" value="0"/>
+      <attribute id="REPUTATION" value="0"/>
+      <attribute id="POWER_POINTS" value="0"/>
+   </attributes>
+   <skills>
+      <skillval custname="Englisch" skill="language" start="4" val="4"/>
+      <skillval custname="Japanisch" skill="language" start="2" val="2"/>
+      <skillval custname="Yakuza" skill="knowledge" start="1" val="1"/>
+      <skillval custname="MCT" skill="knowledge" start="1" val="1"/>
+      <skillval custname="Sicherheitsprozeduren" skill="knowledge" start="1" val="1"/>
+      <skillval custname="Drohnendesign" skill="knowledge" start="1" val="1"/>
+      <skillval custname="Tuning" skill="knowledge" start="1" val="1"/>
+      <skillval skill="engineering" start="6" val="6">
+         <skillspec special="engineering/gunnery"/>
+      </skillval>
+      <skillval skill="piloting" start="5" val="5">
+         <skillspec special="piloting/ground_craft"/>
+      </skillval>
+      <skillval skill="stealth" start="3" val="3"/>
+      <skillval skill="firearms" start="4" val="4">
+         <skillspec special="firearms/rifles"/>
+      </skillval>
+      <skillval skill="influence" start="2" val="2"/>
+      <skillval skill="perception" start="1" val="1"/>
+      <skillval skill="electronics" start="1" val="1">
+         <skillspec special="electronics/hardware"/>
+      </skillval>
+   </skills>
+   <qualities>
+      <qualityval choice="LOGIC" quality="exceptional_attribute" val="1"/>
+      <qualityval quality="analytical_mind" val="1"/>
+      <qualityval quality="distinctive_style" val="1"/>
+      <qualityval choice="Ohne R.E.X." quality="social_stress" val="1">
+         <description>Ohne R.E.X.</description>
+      </qualityval>
+      <qualityval choice="Yakuza" quality="in_debt" val="1">
+         <description>Yakuza</description>
+      </qualityval>
+      <qualityval choice="Yakuza" quality="prejudiced" val="1">
+         <description>Yakuza</description>
+      </qualityval>
+   </qualities>
+   <age>32</age>
+   <size>178</size>
+   <weight>92</weight>
+   <gender>MALE</gender>
+   <connections>
+      <connection id="8364d503-e6b2-49b0-accb-c0daf1ab2d1d" infl="4" loy="3" name="Goober" type="Waffen-/Elektronikhändler"/>
+      <connection id="0d8f0035-9c69-43e4-a8c4-f14e7e67ffa4" infl="4" loy="1" name="Ikatteiru Kumo"/>
+      <connection id="0ae6f52c-a377-4003-9a2f-49db4fb0c367" infl="4" loy="4" name="Maggie Goldberg"/>
+      <connection id="9003ba4c-4c6f-49c5-bcc7-c718c70432d5" infl="3" loy="1" name="Dr. Oz"/>
+   </connections>
+   <gear>
+      <item count="1" qual="STANDARD" rating="2" ref="control_rig" subtype="CYBER_HEADWARE" type="CYBERWARE" uniqueid="3270854f-fb14-428e-a9b4-f81578f7be62"/>
+      <item count="1" qual="USED" ref="wired_reflexes1" subtype="CYBER_BODYWARE" type="CYBERWARE" uniqueid="09701f5d-7165-4f82-8b44-517db318b44a"/>
+      <item count="1" qual="STANDARD" ref="smartlink" subtype="CYBER_EYEWARE" type="CYBERWARE" uniqueid="d3c6539b-d681-4b78-9c86-e671c6a97450"/>
+      <item count="1" qual="STANDARD" ref="bone_lacing_aluminium" subtype="CYBER_BODYWARE" type="CYBERWARE" uniqueid="ce3ff000-4720-49f7-8dcd-60e3fdf8321f"/>
+      <item count="1" qual="STANDARD" ref="proteus_poseidon" subtype="RIGGER_CONSOLE" type="ELECTRONICS" uniqueid="0e08e0b9-0391-453f-9ad2-fad3b0a64853">
+         <accessories>
+            <item count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" ref="signal_scrubber_rig" slot="SOFTWARE_RIGGER" subtype="RIGGER_PROGRAM" type="ACCESSORY" uniqueid="fbaf34b8-0ed8-4f01-9e29-7e6506cfe889"/>
+            <item count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" rating="7" ref="evasion" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="d83d0534-971f-4790-96b1-02d2f51b2064"/>
+            <item count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" rating="7" ref="clearsight" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="14df9f2d-ebbe-4ee2-8f55-d92c185f6e1e"/>
+            <item count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" rating="7" ref="maneuvering" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="665bbc6f-a6b5-4727-89ec-76a4189e5c2c"/>
+            <item count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" rating="7" ref="stealth_auto" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="be96ec8f-5660-4553-9ed8-0dba1cbb9d7e"/>
+            <item choice="fn_har" count="1" embedin="0e08e0b9-0391-453f-9ad2-fad3b0a64853" qual="STANDARD" rating="7" ref="targeting" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="7d02cce1-a383-4269-a5af-664720dc8a0e"/>
+         </accessories>
+      </item>
+      <item count="1" qual="USED" rating="2" ref="reaction_enhancers" subtype="CYBER_BODYWARE" type="CYBERWARE" uniqueid="4f57ca67-ce2d-4c3c-8957-6adf3be97e30"/>
+      <item count="1" qual="STANDARD" ref="toyota_gopher" subtype="TRUCKS" type="VEHICLES" uniqueid="dd441791-76e8-4e54-86c0-954a9b5676d9">
+         <accessories>
+            <item count="1" embedin="dd441791-76e8-4e54-86c0-954a9b5676d9" qual="STANDARD" ref="rigger_interface" slot="VEHICLE_ELECTRONICS" subtype="MOD_MISC" type="ACCESSORY" uniqueid="65d7fb36-8a84-4919-8aa3-0ef45a72e561"/>
+         </accessories>
+      </item>
+      <item count="1" qual="STANDARD" ref="armor_jacket" subtype="ARMOR_BODY" type="ARMOR" uniqueid="76ec1639-d0ff-4eed-9067-5ee1db8cc886">
+         <primary>true</primary>
+      </item>
+      <item count="1" qual="STANDARD" ref="helmet" subtype="ARMOR_HELMET" type="ARMOR" uniqueid="49052e5d-f92b-4399-a87d-f0e7f0f039b1">
+         <accessories>
+            <item count="1" embedin="49052e5d-f92b-4399-a87d-f0e7f0f039b1" qual="STANDARD" ref="low_light_vision" slot="HELMET_ACCESSORY" subtype="OPTICAL" type="ACCESSORY" uniqueid="01818929-4f81-465d-8354-d1d4a7b76d98"/>
+            <item count="1" embedin="49052e5d-f92b-4399-a87d-f0e7f0f039b1" qual="STANDARD" ref="thermographic_vision" slot="HELMET_ACCESSORY" subtype="OPTICAL" type="ACCESSORY" uniqueid="0fab57a2-0d09-40a4-818f-291971210a56"/>
+         </accessories>
+      </item>
+      <item count="1" qual="STANDARD" ref="sony_emporer" subtype="COMMLINK" type="ELECTRONICS" uniqueid="fc2c3126-b1e7-467c-b192-85cb45d3fcd4">
+         <accessories>
+            <item count="1" embedin="fc2c3126-b1e7-467c-b192-85cb45d3fcd4" qual="STANDARD" ref="browse" slot="SOFTWARE" subtype="BASIC_PROGRAM" type="ACCESSORY" uniqueid="acefdb98-bc0d-4d4f-b5b4-d852664e8c71"/>
+         </accessories>
+      </item>
+      <item count="1" customName="R.E.X. (Steel Lync Combat Drone)" qual="STANDARD" ref="steel_lynx_combat_drone" subtype="GROUND" type="DRONE_LARGE" uniqueid="02c66db6-c691-4935-82b6-a97cbb7bf583">
+         <accessories>
+            <item count="1" embedin="02c66db6-c691-4935-82b6-a97cbb7bf583" qual="STANDARD" ref="weapon_mount_standard" slot="VEHICLE_BODY" subtype="MOD_MOUNT" type="ACCESSORY" uniqueid="3084637d-887b-48b5-99fe-f4f0368d4487">
+               <accessories>
+                  <item count="1" embedin="3084637d-887b-48b5-99fe-f4f0368d4487" qual="STANDARD" ref="remington_roomsweeper" slot="VEHICLE_WEAPON" subtype="PISTOLS_HEAVY" type="ACCESSORY" uniqueid="50878ec5-ace9-41da-a2f5-d613b142ce2d">
+                     <accessories>
+                        <item count="1" embedin="50878ec5-ace9-41da-a2f5-d613b142ce2d" qual="STANDARD" ref="laser_sight" slot="TOP" subtype="FIREARMS_ACCESSORY" type="ACCESSORY" uniqueid="e97f8aa4-85e2-4787-8513-1c3d57025b67"/>
+                     </accessories>
+                  </item>
+               </accessories>
+            </item>
+            <item choice="remington_roomsweeper" count="1" embedin="02c66db6-c691-4935-82b6-a97cbb7bf583" qual="STANDARD" rating="7" ref="targeting" slot="SOFTWARE_DRONE" subtype="AUTOSOFT" type="ACCESSORY" uniqueid="6542e1b6-4e34-4af5-82b8-e142e8701107"/>
+            <item count="1" embedin="02c66db6-c691-4935-82b6-a97cbb7bf583" qual="STANDARD" ref="hardpoint_conceal_standard" slot="VEHICLE_BODY" subtype="MOD_MOUNT" type="ACCESSORY" uniqueid="a62434da-7b73-43c7-bc4b-988692210447"/>
+            <item count="1" embedin="02c66db6-c691-4935-82b6-a97cbb7bf583" qual="STANDARD" ref="hardpoint_standard" slot="VEHICLE_CHASSIS" subtype="MOD_CORE" type="ACCESSORY" uniqueid="6cc12b96-e21c-4275-aee0-5649699cc910"/>
+            <item count="1" embedin="02c66db6-c691-4935-82b6-a97cbb7bf583" qual="STANDARD" ref="hardpoint_conceal_standard" slot="VEHICLE_BODY" subtype="MOD_MOUNT" type="ACCESSORY" uniqueid="21d28aa1-c8e2-4348-9508-44824cbcd3c0"/>
+         </accessories>
+         <generatedUUIDs>
+            <uuid>weapon_turret_standard|f198389f-08a5-4fa3-9e91-e868ffc794a6</uuid>
+         </generatedUUIDs>
+         <notes>Ausfahrbare Abdeckung für beide Waffen</notes>
+      </item>
+      <item count="1" customName="Gremlin (MCT-Nissan Roto-Drohne)" qual="STANDARD" ref="mct-nissan_roto_drone" subtype="AIR" type="DRONE_MEDIUM" uniqueid="36b8af42-3740-4f0a-a7bd-126ba40c06ff">
+         <accessories>
+            <item count="1" embedin="36b8af42-3740-4f0a-a7bd-126ba40c06ff" qual="STANDARD" ref="weapon_mount_standard" slot="VEHICLE_BODY" subtype="MOD_MOUNT" type="ACCESSORY" uniqueid="6e192c52-7b47-419d-b59f-aac5ed4a657a">
+               <accessories>
+                  <item count="1" embedin="6e192c52-7b47-419d-b59f-aac5ed4a657a" qual="STANDARD" ref="fn_har" slot="VEHICLE_WEAPON" subtype="RIFLE_ASSAULT" type="ACCESSORY" uniqueid="483e9453-4f3b-4155-ae71-a2d95aad218a"/>
+               </accessories>
+            </item>
+            <item count="1" embedin="36b8af42-3740-4f0a-a7bd-126ba40c06ff" qual="STANDARD" ref="smoke_projector_normal" slot="VEHICLE_ACCESSORY" subtype="VEHICLE_ACCESSORY" type="ACCESSORY" uniqueid="8906ff8d-6481-4004-957e-ce0956c61cf8"/>
+         </accessories>
+      </item>
+      <item count="2" qual="STANDARD" ref="mct_gnat" subtype="AIR" type="DRONE_MICRO" uniqueid="45ce455a-9852-4a4e-a7c3-1de9a2656219"/>
+      <item count="1" qual="STANDARD" ref="cyberspace_designs_quadrotor" subtype="AIR" type="DRONE_SMALL" uniqueid="5530027c-39c0-4b16-85c7-cffdb835bedf"/>
+      <item count="1" qual="STANDARD" ref="autopicker" subtype="BREAKING" type="ELECTRONICS" uniqueid="221e5bfb-fa3b-4aae-b54d-fd9f9a1c2db9"/>
+      <item count="1" qual="STANDARD" ref="tag_eraser" subtype="COMMUNICATION" type="ELECTRONICS" uniqueid="9baa2b44-a0d8-4b34-9c99-2f75ef6ab207"/>
+      <item choice="engineering" count="1" qual="STANDARD" ref="kit" subtype="TOOLS" type="TOOLS" uniqueid="eca6bd00-5e4a-4e23-8042-46d009563718"/>
+      <item count="1" qual="STANDARD" ref="ares_predator_vi" subtype="PISTOLS_HEAVY" type="WEAPON_FIREARMS" uniqueid="386ebfa5-32b7-4042-b0c0-d3bd39bec18e">
+         <accessories>
+            <item count="1" embedin="386ebfa5-32b7-4042-b0c0-d3bd39bec18e" qual="STANDARD" ref="quick_draw_holster" slot="FIREARMS_EXTERNAL" subtype="FIREARMS_ACCESSORY" type="ACCESSORY" uniqueid="bef8eec7-a944-445b-98ff-3336219cd4ac"/>
+         </accessories>
+      </item>
+      <item count="1" qual="STANDARD" ref="fn_har" subtype="RIFLE_ASSAULT" type="WEAPON_FIREARMS" uniqueid="24d6e05a-bed5-4f82-9cd9-53573b089151">
+         <accessories>
+            <item count="1" embedin="24d6e05a-bed5-4f82-9cd9-53573b089151" qual="STANDARD" ref="smartgun_system_external" slot="UNDER" subtype="FIREARMS_ACCESSORY" type="ACCESSORY" uniqueid="6927df27-164a-405a-82de-20e071db1411"/>
+         </accessories>
+         <conditions>
+            <id>item.smartgun_system_external.cond.2</id>
+         </conditions>
+         <primary>true</primary>
+      </item>
+      <item count="1" embedin="6e192c52-7b47-419d-b59f-aac5ed4a657a" qual="STANDARD" ref="fn_har" slot="VEHICLE_WEAPON" subtype="RIFLE_ASSAULT" type="ACCESSORY" uniqueid="483e9453-4f3b-4155-ae71-a2d95aad218a"/>
+      <item count="1" embedin="f198389f-08a5-4fa3-9e91-e868ffc794a6" qual="STANDARD" ref="fn_har" slot="VEHICLE_WEAPON" subtype="RIFLE_ASSAULT" type="ACCESSORY" uniqueid="09c5f03a-3e83-44a3-a4f2-b044303c805e"/>
+      <item count="1" embedin="3084637d-887b-48b5-99fe-f4f0368d4487" qual="STANDARD" ref="remington_roomsweeper" slot="VEHICLE_WEAPON" subtype="PISTOLS_HEAVY" type="ACCESSORY" uniqueid="50878ec5-ace9-41da-a2f5-d613b142ce2d">
+         <accessories>
+            <item count="1" embedin="50878ec5-ace9-41da-a2f5-d613b142ce2d" qual="STANDARD" ref="laser_sight" slot="TOP" subtype="FIREARMS_ACCESSORY" type="ACCESSORY" uniqueid="e97f8aa4-85e2-4787-8513-1c3d57025b67"/>
+         </accessories>
+      </item>
+      <item choice="explosive" count="6" qual="STANDARD" ref="ammo_shotgun" subtype="AMMUNITION" type="AMMUNITION" uniqueid="85892f29-98cd-42d9-aaa4-07ce42f4f35c"/>
+      <item choice="regular" count="6" qual="STANDARD" ref="ammo_heavy_smg" subtype="AMMUNITION" type="AMMUNITION" uniqueid="6e45aeee-9c9f-4327-8f0e-33d4ed8fa0a9"/>
+      <item choice="regular" count="29" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="5c62f98f-8af6-4e7c-8d5a-faf32fb12400"/>
+   </gear>
+   <sins>
+      <sin name="Elias Lane" quality="ROUGH_MATCH" uniqueid="f3b4be24-1124-4d86-adf0-32c228a31878"/>
+   </sins>
+   <lifestyles>
+      <lifestyle months="1" name="Goober's Schrottplatz" ref="low" uniqueid="ee950b9a-54ef-4ab1-95e5-5ed10920243d">
+         <description>Wohnwagen, am Rand vom Schrottplatz abgestellt.</description>
+      </lifestyle>
+   </lifestyles>
+   <history>
+      <nuyenmod value="3000"/>
+      <skillspecmod date="2026-03-02T19:26:24.040+01:00" expCost="5" ref="piloting/ground_craft" skill="piloting"/>
+      <nuyenmod value="10300"/>
+   </history>
+   <rewards>
+      <reward date="2026-02-28T19:24:13.000+01:00" exp="2">
+         <title>Aus Erstellung</title>
+      </reward>
+      <reward date="2026-03-01T21:00:00.000+01:00" exp="5">
+         <title>Milch und Eier</title>
+         <modifications>
+            <nuyenmod value="3000"/>
+         </modifications>
+      </reward>
+      <reward date="2026-04-19T08:42:39.000+02:00" exp="10">
+         <title>Sightseeing</title>
+         <modifications>
+            <nuyenmod value="10300"/>
+         </modifications>
+      </reward>
+   </rewards>
+   <decisions/>
+   <pluginMode>SELECTED</pluginMode>
+   <permittedPlugins>
+      <plugins>DOUBLE_CLUTCH</plugins>
+      <plugins>FIRING_SQUAD</plugins>
+   </permittedPlugins>
+</sr6char>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sr6char magic="magician" meta="elf" nuyen="5000" trad="red_magic">
+   <chargen>prio</chargen>
+   <chargenSettings>{&#x0022;variant&#x0022;:&#x0022;STANDARD&#x0022;,&#x0022;priorities&#x0022;:{&#x0022;SKILLS&#x0022;:&#x0022;D&#x0022;,&#x0022;ATTRIBUTE&#x0022;:&#x0022;E&#x0022;,&#x0022;MAGIC&#x0022;:&#x0022;C&#x0022;,&#x0022;RESOURCES&#x0022;:&#x0022;A&#x0022;,&#x0022;METATYPE&#x0022;:&#x0022;B&#x0022;},&#x0022;mysticAdeptMaxPoints&#x0022;:0,&#x0022;mysticAdeptPowerPoints&#x0022;:0,&#x0022;usedKarma&#x0022;:0,&#x0022;perAttrib&#x0022;:{&#x0022;BODY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:2,&#x0022;karma&#x0022;:0},&#x0022;STRENGTH&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;EDGE&#x0022;:{&#x0022;adjust&#x0022;:5,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;WILLPOWER&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;CHARISMA&#x0022;:{&#x0022;adjust&#x0022;:2,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;REACTION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;RESONANCE&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;INTUITION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;LOGIC&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;MAGIC&#x0022;:{&#x0022;adjust&#x0022;:4,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;AGILITY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0}},&#x0022;karmaMod&#x0022;:0}</chargenSettings>
+   <name>Unnamed chummer</name>
+   <attributes>
+      <attribute id="BODY" start="3" value="3"/>
+      <attribute id="AGILITY" start="1" value="1"/>
+      <attribute id="REACTION" start="1" value="1"/>
+      <attribute id="STRENGTH" start="1" value="1"/>
+      <attribute id="WILLPOWER" start="1" value="1"/>
+      <attribute id="LOGIC" start="1" value="1"/>
+      <attribute id="INTUITION" start="1" value="1"/>
+      <attribute id="CHARISMA" start="3" value="3"/>
+      <attribute id="EDGE" start="6" value="6"/>
+      <attribute id="MAGIC" start="6" value="6"/>
+      <attribute id="RESONANCE" value="0"/>
+      <attribute id="HEAT" value="0"/>
+      <attribute id="REPUTATION" value="0"/>
+      <attribute id="POWER_POINTS" value="0"/>
+   </attributes>
+   <skills>
+      <skillval skill="language" start="4" val="4"/>
+      <skillval skill="language" start="1" val="1"/>
+      <skillval skill="astral" start="6" val="6"/>
+      <skillval skill="athletics" start="5" val="5"/>
+      <skillval skill="conjuring" start="5" val="5"/>
+   </skills>
+   <rituals>
+      <ritualval ritual="prodigal_spell"/>
+      <ritualval ritual="remote_sensing"/>
+      <ritualval ritual="circle_of_healing"/>
+      <ritualval ritual="watcher"/>
+   </rituals>
+   <size>0</size>
+   <weight>0</weight>
+   <gender>MALE</gender>
+   <gear>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_dmso" subtype="AMMUNITION" type="AMMUNITION" uniqueid="99e74f6c-1943-4453-9c2a-8b5dcbbe188a"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="24d26b9b-75c5-4ab3-8081-285364909740"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_holdout_light_machine" subtype="AMMUNITION" type="AMMUNITION" uniqueid="28bee298-0d5f-4b1b-b9b8-56f8f9192798"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_darts" subtype="AMMUNITION" type="AMMUNITION" uniqueid="70e0a302-2c43-4d50-8c46-e7ad2c6923ca"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_machine_gun" subtype="AMMUNITION" type="AMMUNITION" uniqueid="7de74f6c-e3b6-44ac-a49c-64b2289f9b43"/>
+      <item count="1" qual="STANDARD" rating="1" ref="ammo_arrow" subtype="AMMUNITION" type="AMMUNITION" uniqueid="c5f49d5f-f6b8-4503-b895-7a269191aab6"/>
+      <item count="1" qual="STANDARD" rating="1" ref="ammo_injection_arrow" subtype="AMMUNITION" type="AMMUNITION" uniqueid="2034f3cd-6e25-4691-b29e-209dd34fcbf4"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_shotgun" subtype="AMMUNITION" type="AMMUNITION" uniqueid="d3c57da9-acd4-4eb1-afb9-05fef4a309ad"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_heavy_smg" subtype="AMMUNITION" type="AMMUNITION" uniqueid="69f92be4-c3ca-4a01-b21f-84b12707106d"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_cannon" subtype="AMMUNITION" type="AMMUNITION" uniqueid="0c17f97d-ad06-4d27-ba84-518ffb40b3aa"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_taser" subtype="AMMUNITION" type="AMMUNITION" uniqueid="5fd59000-303e-494a-9186-33d1461f066f"/>
+   </gear>
+   <decisions/>
+   <pluginMode>LANGUAGE</pluginMode>
+</sr6char>
