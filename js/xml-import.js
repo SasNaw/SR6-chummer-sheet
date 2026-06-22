@@ -4,6 +4,10 @@ import { prettifyRef } from './util.js';
 
 const MAX_MOUNT_DEPTH = 20;
 
+// sr6char stores ammunition quantities in units of 10 rounds (a "count" of 6
+// means 60 rounds). Weapon magazine capacities are already in real rounds.
+const ROUNDS_PER_AMMO_UNIT = 10;
+
 function firstText(doc, tag) {
   const el = doc.getElementsByTagName(tag)[0];
   return el && el.textContent ? el.textContent.trim() : '';
@@ -63,7 +67,7 @@ function parseReserves(items) {
     .map((it) => createReservePool({
       ammoCategory: attr(it, 'ref'),
       ammoType: attr(it, 'choice') || 'regular',
-      count: parseInt(attr(it, 'count') || '0', 10),
+      count: parseInt(attr(it, 'count') || '0', 10) * ROUNDS_PER_AMMO_UNIT,
     }));
 }
 

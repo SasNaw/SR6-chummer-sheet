@@ -45,10 +45,12 @@ test('S4T0: weapon defs and full magazines applied', () => {
 test('S4T0: three reserve pools', () => {
   const c = parseSr6CharDoc(load('S4T0.xml'));
   assert.equal(c.reserves.length, 3);
+  // sr6char ammunition counts are in units of 10 rounds, so the XML's "29" / "6"
+  // become 290 / 60 actual rounds. (Weapon magazine sizes are already real rounds.)
   const rifle = c.reserves.find((r) => r.ammoCategory === 'ammo_rifles');
-  assert.deepEqual(rifle, { ammoCategory: 'ammo_rifles', ammoType: 'regular', count: 29 });
+  assert.deepEqual(rifle, { ammoCategory: 'ammo_rifles', ammoType: 'regular', count: 290 });
   const shot = c.reserves.find((r) => r.ammoCategory === 'ammo_shotgun');
-  assert.deepEqual(shot, { ammoCategory: 'ammo_shotgun', ammoType: 'explosive', count: 6 });
+  assert.deepEqual(shot, { ammoCategory: 'ammo_shotgun', ammoType: 'explosive', count: 60 });
 });
 
 test('all-ammo: every category imported; missing choice -> regular', () => {
@@ -58,4 +60,5 @@ test('all-ammo: every category imported; missing choice -> regular', () => {
   assert.ok(cats.includes('ammo_arrow'));
   const arrow = c.reserves.find((r) => r.ammoCategory === 'ammo_arrow');
   assert.equal(arrow.ammoType, 'regular'); // arrow item had no choice attribute
+  assert.equal(arrow.count, 10); // XML count "1" -> 10 rounds (units of 10)
 });
