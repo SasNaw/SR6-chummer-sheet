@@ -1,5 +1,6 @@
 import { loadState, saveState } from './store.js';
 import { el, clear } from './ui/dom.js';
+import { translate } from './i18n.js';
 import { renderPicker } from './ui/character-picker.js';
 import { renderSheet } from './ui/character-sheet.js';
 import { renderIoBar } from './ui/io.js';
@@ -9,6 +10,8 @@ let view = { name: 'picker', characterId: null };
 
 export function getState() { return state; }
 export function mutate(fn) { state = fn(state); saveState(state); render(); }
+// Translate a key in the current language (used throughout the UI).
+export function t(key, ...params) { return translate(state.lang || 'en', key, ...params); }
 export function goPicker() { view = { name: 'picker', characterId: null }; render(); }
 export function goSheet(characterId) { view = { name: 'sheet', characterId }; render(); }
 

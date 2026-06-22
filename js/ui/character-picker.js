@@ -1,25 +1,40 @@
 import { el } from './dom.js';
-import { getState, mutate } from '../app.js';
+import { getState, mutate, t } from '../app.js';
 import { createCharacter, upsertCharacter } from '../model.js';
+
+// EN/DE language toggle for the whole app.
+function languageSelector() {
+  const lang = getState().lang || 'en';
+  const opt = (code, label) => el('button', {
+    class: lang === code ? 'toggle on' : 'toggle',
+    onclick: () => { if (lang !== code) mutate((s) => ({ ...s, lang: code })); },
+  }, label);
+  return el('div', { class: 'row' }, [
+    el('span', { class: 'muted' }, t('language')),
+    opt('en', 'EN'),
+    opt('de', 'DE'),
+  ]);
+}
 
 export function renderPicker(container, { onOpen }) {
   const { characters } = getState();
 
+  container.append(el('div', { class: 'section-title' }, [el('h2', {}, t('characters')), languageSelector()]));
+
   const addBtn = el('button', {
     class: 'accent',
     onclick: () => {
-      const name = prompt('Character name?');
+      const name = prompt(t('characterNamePrompt'));
       if (!name) return;
       const c = createCharacter({ name });
       mutate((s) => ({ ...s, characters: upsertCharacter(s.characters, c), activeId: c.id }));
       onOpen(c.id);
     },
-  }, '+ New character');
-
-  container.append(el('div', { class: 'section-title' }, [el('h2', {}, 'Characters'), addBtn]));
+  }, t('newCharacter'));
+  container.append(el('div', { class: 'row' }, [addBtn]));
 
   if (characters.length === 0) {
-    container.append(el('div', { class: 'empty' }, 'No characters yet. Add one or import from XML below.'));
+    container.append(el('div', { class: 'empty' }, t('noCharacters')));
   }
 
   const list = el('div', { class: 'list' });
@@ -30,18 +45,18 @@ export function renderPicker(container, { onOpen }) {
     open.style.textAlign = 'left';
 
     const rename = el('button', {
-      class: 'icon', title: 'Rename',
+      class: 'icon', title: t('rename'),
       onclick: () => {
-        const name = prompt('New name?', c.name);
+        const name = prompt(t('newNamePrompt'), c.name);
         if (!name) return;
         mutate((s) => ({ ...s, characters: upsertCharacter(s.characters, { ...c, name }) }));
       },
     }, '✎');
 
     const del = el('button', {
-      class: 'icon danger', title: 'Delete',
+      class: 'icon danger', title: t('del'),
       onclick: () => {
-        if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
+        if (!confirm(t('deleteCharacterConfirm', c.name))) return;
         mutate((s) => ({
           ...s,
           characters: s.characters.filter((x) => x.id !== c.id),
