@@ -22,7 +22,7 @@ function cloneDef(def) {
 }
 
 export function getWeaponDef(ref) {
-  if (WEAPONS_DB[ref]) return cloneDef(WEAPONS_DB[ref]);
+  if (Object.prototype.hasOwnProperty.call(WEAPONS_DB, ref)) return cloneDef(WEAPONS_DB[ref]);
   return {
     name: prettifyRef(ref),
     magazineCapacity: 10,
