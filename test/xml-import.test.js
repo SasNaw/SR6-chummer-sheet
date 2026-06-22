@@ -53,12 +53,24 @@ test('S4T0: three reserve pools', () => {
   assert.deepEqual(shot, { ammoCategory: 'ammo_shotgun', ammoType: 'explosive', count: 60 });
 });
 
-test('all-ammo: every category imported; missing choice -> regular', () => {
+test('all-ammo: every ammo item imported as its own (category, type) pool', () => {
   const c = parseSr6CharDoc(load('all-ammo.xml'));
-  assert.equal(c.reserves.length, 11);
-  const cats = c.reserves.map((r) => r.ammoCategory).sort();
+  assert.equal(c.reserves.length, 19); // one pool per AMMUNITION item, including all subtypes
+  const cats = c.reserves.map((r) => r.ammoCategory);
   assert.ok(cats.includes('ammo_arrow'));
+  assert.ok(cats.includes('ammo_bolt')); // new categories present
+  assert.ok(cats.includes('ammo_injection_bolt'));
   const arrow = c.reserves.find((r) => r.ammoCategory === 'ammo_arrow');
   assert.equal(arrow.ammoType, 'regular'); // arrow item had no choice attribute
   assert.equal(arrow.count, 10); // XML count "1" -> 10 rounds (units of 10)
+});
+
+test('all-ammo: rifle subtypes import as distinct pools, not collapsed to regular', () => {
+  const c = parseSr6CharDoc(load('all-ammo.xml'));
+  const rifleTypes = c.reserves
+    .filter((r) => r.ammoCategory === 'ammo_rifles')
+    .map((r) => r.ammoType)
+    .sort();
+  assert.deepEqual(rifleTypes,
+    ['apds', 'apds_caseless', 'explosive', 'flechette', 'gel', 'regular', 'stick_n_shock']);
 });

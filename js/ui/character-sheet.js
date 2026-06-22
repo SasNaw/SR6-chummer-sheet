@@ -5,7 +5,7 @@ import {
   updateWeapon, removeWeapon, addReserve, setReserveCount, removeReserve,
   createWeapon, createReservePool, upsertCharacter,
 } from '../model.js';
-import { AMMO_CATEGORIES, AMMO_TYPES, categoryName } from '../ammo-db.js';
+import { AMMO_CATEGORIES, AMMO_TYPES, categoryName, typeName } from '../ammo-db.js';
 
 // Apply a Character->Character transform to the active character.
 function updateCharacter(characterId, fn) {
@@ -37,7 +37,7 @@ function weaponCard(c, w) {
   // Count + loaded ammo type
   card.append(el('div', { class: 'row spread' }, [
     el('div', { class: 'count' }, [String(w.loaded.count), el('span', { class: 'cap' }, ` / ${w.magazineCapacity}`)]),
-    el('span', { class: 'badge' }, w.loaded.ammoType),
+    el('span', { class: 'badge' }, typeName(w.loaded.ammoType)),
   ]));
 
   // Firing-mode buttons
@@ -79,7 +79,7 @@ function doReload(c, w) {
   }
   let type = pools[0].ammoType;
   if (pools.length > 1) {
-    const choice = prompt(`Reload which type? ${pools.map((p) => `${p.ammoType} (${p.count})`).join(', ')}`, w.loaded.ammoType);
+    const choice = prompt(`Reload which type (enter the code)? ${pools.map((p) => `${p.ammoType} = ${typeName(p.ammoType)} (${p.count})`).join(', ')}`, w.loaded.ammoType);
     if (!choice) return;
     type = choice.trim();
   }
@@ -131,7 +131,7 @@ function reserveSection(c) {
     wrap.append(el('div', { class: 'muted' }, categoryName(cat)));
     for (const r of pools) {
       wrap.append(el('div', { class: 'row spread' }, [
-        el('span', { class: 'badge' }, r.ammoType),
+        el('span', { class: 'badge' }, typeName(r.ammoType)),
         el('div', { class: 'row' }, [
           el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count - 1)) }, '−'),
           el('span', { class: 'count' }, String(r.count)),

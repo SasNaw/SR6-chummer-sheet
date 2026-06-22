@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<sr6char magic="magician" meta="elf" nuyen="5000" trad="red_magic">
+<sr6char magic="magician" meta="elf" nuyen="1000004715" trad="red_magic">
    <chargen>prio</chargen>
    <chargenSettings>{&#x0022;variant&#x0022;:&#x0022;STANDARD&#x0022;,&#x0022;priorities&#x0022;:{&#x0022;SKILLS&#x0022;:&#x0022;D&#x0022;,&#x0022;ATTRIBUTE&#x0022;:&#x0022;E&#x0022;,&#x0022;MAGIC&#x0022;:&#x0022;C&#x0022;,&#x0022;RESOURCES&#x0022;:&#x0022;A&#x0022;,&#x0022;METATYPE&#x0022;:&#x0022;B&#x0022;},&#x0022;mysticAdeptMaxPoints&#x0022;:0,&#x0022;mysticAdeptPowerPoints&#x0022;:0,&#x0022;usedKarma&#x0022;:0,&#x0022;perAttrib&#x0022;:{&#x0022;BODY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:2,&#x0022;karma&#x0022;:0},&#x0022;STRENGTH&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;EDGE&#x0022;:{&#x0022;adjust&#x0022;:5,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;WILLPOWER&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;CHARISMA&#x0022;:{&#x0022;adjust&#x0022;:2,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;REACTION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;RESONANCE&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;INTUITION&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;LOGIC&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;MAGIC&#x0022;:{&#x0022;adjust&#x0022;:4,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0},&#x0022;AGILITY&#x0022;:{&#x0022;adjust&#x0022;:0,&#x0022;regular&#x0022;:0,&#x0022;karma&#x0022;:0}},&#x0022;karmaMod&#x0022;:0}</chargenSettings>
    <name>Unnamed chummer</name>
@@ -47,7 +47,26 @@
       <item choice="regular" count="1" qual="STANDARD" ref="ammo_heavy_smg" subtype="AMMUNITION" type="AMMUNITION" uniqueid="69f92be4-c3ca-4a01-b21f-84b12707106d"/>
       <item choice="regular" count="1" qual="STANDARD" ref="ammo_cannon" subtype="AMMUNITION" type="AMMUNITION" uniqueid="0c17f97d-ad06-4d27-ba84-518ffb40b3aa"/>
       <item choice="regular" count="1" qual="STANDARD" ref="ammo_taser" subtype="AMMUNITION" type="AMMUNITION" uniqueid="5fd59000-303e-494a-9186-33d1461f066f"/>
+      <item choice="apds_caseless" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="45814c87-ecfd-49a4-a0e8-07b370b2ca56"/>
+      <item choice="apds" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="3998fcd1-1045-403a-8f44-5664272b2aee"/>
+      <item choice="explosive" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="71ad138a-3de2-4de8-a3ca-9445ff2a2f5e"/>
+      <item choice="flechette" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="4e3cd0dc-fcc4-4468-ac67-71f526f1d9ee"/>
+      <item choice="gel" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="a569ec0b-a8c0-4602-afe1-675c91e26c15"/>
+      <item choice="stick_n_shock" count="1" qual="STANDARD" ref="ammo_rifles" subtype="AMMUNITION" type="AMMUNITION" uniqueid="d657a440-ea3b-41dd-a045-d297736325f1"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_bolt" subtype="AMMUNITION" type="AMMUNITION" uniqueid="119e2247-3eb8-4301-8fe1-420f4b2faa0e"/>
+      <item choice="regular" count="1" qual="STANDARD" ref="ammo_injection_bolt" subtype="AMMUNITION" type="AMMUNITION" uniqueid="7218712e-72a9-4fff-a751-769a9d10f59d"/>
    </gear>
+   <history>
+      <nuyenmod value="1000000090"/>
+   </history>
+   <rewards>
+      <reward date="2026-06-22T15:51:07.000+02:00">
+         <title>rosebud</title>
+         <modifications>
+            <nuyenmod value="1000000090"/>
+         </modifications>
+      </reward>
+   </rewards>
    <decisions/>
    <pluginMode>LANGUAGE</pluginMode>
 </sr6char>
