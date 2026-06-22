@@ -17,6 +17,15 @@ test('addWeapon / updateWeapon / removeWeapon', () => {
   assert.equal(c.weapons.length, 0);
 });
 
+test('updateWeapon and removeWeapon no-op on a non-existent id', () => {
+  let c = createCharacter({ name: 'T' });
+  c = addWeapon(c, createWeapon({ id: 'w1', name: 'Pistol', magazineCapacity: 15 }));
+  const afterUpdate = updateWeapon(c, 'no-such-id', { magazineCapacity: 99 });
+  assert.deepEqual(afterUpdate.weapons, c.weapons);
+  const afterRemove = removeWeapon(c, 'no-such-id');
+  assert.equal(afterRemove.weapons.length, c.weapons.length);
+});
+
 test('upsertCharacter replaces by id or appends', () => {
   const a = createCharacter({ id: 'a', name: 'A' });
   const b = createCharacter({ id: 'b', name: 'B' });
