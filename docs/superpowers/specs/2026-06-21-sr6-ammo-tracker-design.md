@@ -154,6 +154,38 @@ default supported firing modes and per-mode round costs. All values are editable
 by the user after import, so coverage gaps degrade gracefully (unknown weapons
 get a sensible default mode set the user can adjust).
 
+## Ammo Categories & Types (ammo-db.js)
+
+SR6 organizes ammunition into **categories** (which weapon families share which
+ammo), and within each category the player chooses an ammo **type** (regular,
+APDS, explosive, …). Both dimensions are first-class here.
+
+**Categories** — the canonical set, taken from a Chummer export carrying every
+relevant pool. `ref → display name`:
+
+- `ammo_holdout_light_machine` — Holdout / Light / Machine Pistol
+- `ammo_heavy_smg` — Heavy Pistol / SMG  *(heavy pistols share SMG ammo — e.g. the Ares Predator VI)*
+- `ammo_rifles` — Rifle
+- `ammo_shotgun` — Shotgun
+- `ammo_machine_gun` — Machine Gun
+- `ammo_cannon` — Cannon / Assault Cannon
+- `ammo_taser` — Taser Dart
+- `ammo_darts` — Dart
+- `ammo_dmso` — DMSO Rounds
+- `ammo_arrow` — Arrow
+- `ammo_injection_arrow` — Injection Arrow
+
+**Types** — a default, user-extensible list offered when adding a reserve pool or
+reloading: `regular`, `APDS`, `explosive`, `ex-explosive`, `gel`, `flechette`,
+`stick-n-shock`, `tracer`, `hollow-point`, `subsonic`, `frangible`, `capsule`.
+The user may also type a custom type. An ammo item with no `choice` in the XML
+(e.g. arrows) imports as type `regular`.
+
+A reserve pool is uniquely identified by `(ammoCategory, ammoType)`, so one
+category can hold several type pools at once (e.g. `ammo_rifles`/regular and
+`ammo_rifles`/APDS side by side). The Reserve view groups pools by category and
+lists each type beneath it.
+
 ## File Layout
 
 ```
@@ -166,7 +198,8 @@ js/app.js          (entry point, view switching, event wiring)
 js/store.js        (localStorage load/save, JSON export/import)
 js/model.js        (character/weapon operations — pure, unit-tested)
 js/xml-import.js   (sr6char XML -> character — pure, unit-tested)
-js/weapons-db.js   (ref lookup table)
+js/weapons-db.js   (weapon ref lookup table)
+js/ammo-db.js      (ammo category names + default ammo type list)
 js/ui/*.js         (render functions per view/component)
 test/*.test.js     (node --test)
 ```
