@@ -16,15 +16,12 @@ function updateCharacter(characterId, fn) {
   });
 }
 
-function weaponCard(c, w) {
+function weaponCard(c, w, { stashable = false } = {}) {
   const card = el('div', { class: 'card' });
 
-  // Header: name + mount badge + edit/delete
+  // Header: name + edit/delete
   card.append(el('div', { class: 'row spread' }, [
-    el('div', { class: 'row' }, [
-      el('h2', {}, w.name),
-      el('span', { class: 'badge' }, w.mount === 'carried' ? 'Carried' : w.mount),
-    ]),
+    el('h2', {}, w.name),
     el('div', { class: 'row' }, [
       el('button', { class: 'icon', title: 'Edit', onclick: () => editWeapon(c, w) }, '✎'),
       el('button', {
@@ -61,6 +58,16 @@ function weaponCard(c, w) {
   ]));
 
   if (w.notes) card.append(el('div', { class: 'muted' }, w.notes));
+
+  // Equipped/unequipped toggle, bottom-right (runner weapons only)
+  if (stashable) {
+    const cb = el('input', { type: 'checkbox' });
+    cb.checked = !w.stashed; // checked = equipped, unchecked = unequipped
+    cb.addEventListener('change', () =>
+      updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, { stashed: !cb.checked })));
+    card.append(el('div', { class: 'card-foot' }, el('label', { class: 'carried-toggle' }, [cb, 'Equipped'])));
+  }
+
   return card;
 }
 
@@ -136,7 +143,10 @@ function editWeapon(c, w) {
 }
 
 function reserveSection(c) {
-  const wrap = el('div', { class: 'card' });
+  // Reserve ammo lives outside a card, in the same grouped style as Weapons/Drones.
+  // Here the weapon type (category) is the sub-header and the ammo type is the
+  // muted row label — the reverse emphasis from the weapon cards.
+  const wrap = el('div', { class: 'group' });
   wrap.append(el('div', { class: 'section-title' }, [
     el('h2', {}, 'Reserve ammo'),
     el('button', { onclick: () => openAddPoolModal(c) }, '+ Pool'),
@@ -149,10 +159,10 @@ function reserveSection(c) {
     const byCat = {};
     for (const r of c.reserves) (byCat[r.ammoCategory] ||= []).push(r);
     for (const [cat, pools] of Object.entries(byCat)) {
-      wrap.append(el('div', { class: 'muted' }, categoryName(cat)));
+      wrap.append(el('div', { class: 'subgroup-title' }, categoryName(cat)));
       for (const r of pools) {
         wrap.append(el('div', { class: 'row spread' }, [
-          el('span', { class: 'badge' }, typeName(r.ammoType)),
+          el('span', { class: 'muted' }, typeName(r.ammoType)),
           el('div', { class: 'row' }, [
             el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count - 1)) }, '−'),
             el('span', { class: 'count' }, String(r.count)),
@@ -216,21 +226,51 @@ function openAddPoolModal(c) {
   ]);
 }
 
+function weaponList(c, weapons, stashable) {
+  const list = el('div', { class: 'list' });
+  for (const w of weapons) list.append(weaponCard(c, w, { stashable }));
+  return list;
+}
+
 export function renderSheet(container, characterId) {
   const c = getState().characters.find((x) => x.id === characterId);
   if (!c) { container.append(el('div', { class: 'empty' }, 'Character not found.')); return; }
 
-  container.append(el('div', { class: 'section-title' }, [
-    el('h2', {}, 'Weapons'),
-    el('button', {
-      onclick: () => updateCharacter(c.id, (ch) => ({ ...ch, weapons: [...ch.weapons, createWeapon({ name: 'New Weapon', magazineCapacity: 10 })] })),
-    }, '+ Weapon'),
+  // Runner weapons (personally carried) vs drone-mounted weapons.
+  const runner = c.weapons.filter((w) => w.mount === 'carried');
+  const carrying = runner.filter((w) => !w.stashed);
+  const stashed = runner.filter((w) => w.stashed);
+  const drones = new Map(); // mount (drone name) -> weapons[], first-seen order
+  for (const w of c.weapons) {
+    if (w.mount === 'carried') continue;
+    if (!drones.has(w.mount)) drones.set(w.mount, []);
+    drones.get(w.mount).push(w);
+  }
+
+  // Runner section: <name> with Carrying / Stashed sub-headers.
+  container.append(el('div', { class: 'group' }, [
+    el('div', { class: 'section-title' }, [
+      el('h2', {}, 'Weapons'),
+      el('button', {
+        onclick: () => updateCharacter(c.id, (ch) => ({ ...ch, weapons: [...ch.weapons, createWeapon({ name: 'New Weapon', magazineCapacity: 10 })] })),
+      }, '+ Weapon'),
+    ]),
+    el('div', { class: 'subgroup-title' }, 'Equipped'),
+    carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, 'Nothing equipped.'),
+    el('div', { class: 'subgroup-title' }, 'Unequipped'),
+    stashed.length ? weaponList(c, stashed, true) : el('div', { class: 'muted' }, 'Nothing unequipped.'),
   ]));
 
-  if (c.weapons.length === 0) container.append(el('div', { class: 'empty' }, 'No weapons. Add one or import from XML.'));
-  const list = el('div', { class: 'list' });
-  for (const w of c.weapons) list.append(weaponCard(c, w));
-  container.append(list);
+  // Drones section: a sub-header per drone, weapons can't be stashed.
+  if (drones.size > 0) {
+    const children = [el('div', { class: 'section-title' }, [el('h2', {}, 'Drones')])];
+    for (const [name, weapons] of drones) {
+      children.push(el('div', { class: 'subgroup-title' }, name));
+      children.push(weaponList(c, weapons, false));
+    }
+    container.append(el('div', { class: 'group' }, children));
+  }
 
+  // Reserve ammo: its own top-level section.
   container.append(reserveSection(c));
 }
