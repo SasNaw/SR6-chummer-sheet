@@ -21,12 +21,13 @@ export function createWeapon(props = {}) {
 }
 
 export function createCharacter(props = {}) {
-  const { name = '', realName = '', weapons = [], reserves = [], id } = props;
+  const { name = '', realName = '', weapons = [], reserves = [], drones = [], id } = props;
   return {
     id: id !== undefined ? id : newId(),
     name, realName,
     weapons: weapons.map((w) => ({ ...w })),
     reserves: reserves.map((r) => ({ ...r })),
+    drones: [...drones],
   };
 }
 
@@ -130,6 +131,21 @@ export function updateWeapon(character, weaponId, changes) {
 
 export function removeWeapon(character, weaponId) {
   return { ...character, weapons: character.weapons.filter((w) => w.id !== weaponId) };
+}
+
+export function addDrone(character, name) {
+  const drones = character.drones ?? [];
+  if (!name || drones.includes(name)) return character;
+  return { ...character, drones: [...drones, name] };
+}
+
+// Removes the drone and every weapon mounted on it (mount === name).
+export function removeDrone(character, name) {
+  return {
+    ...character,
+    drones: (character.drones ?? []).filter((d) => d !== name),
+    weapons: character.weapons.filter((w) => w.mount !== name),
+  };
 }
 
 export function upsertCharacter(characters, character) {

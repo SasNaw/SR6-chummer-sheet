@@ -2,10 +2,19 @@ import { el, openModal } from './dom.js';
 import { getState, mutate } from '../app.js';
 import {
   fire, spend, addRounds, setLoaded, reload, matchingReserves,
-  updateWeapon, removeWeapon, addReserve, setReserveCount, removeReserve,
-  createWeapon, createReservePool, upsertCharacter,
+  updateWeapon, removeWeapon, addWeapon, addReserve, setReserveCount, removeReserve,
+  createWeapon, createReservePool, upsertCharacter, addDrone, removeDrone,
 } from '../model.js';
 import { AMMO_CATEGORIES, AMMO_TYPES, categoryName, typeName } from '../ammo-db.js';
+
+// Standard SR6 firing modes offered when creating a weapon (round cost per mode;
+// editable later via the weapon's edit dialog).
+const STANDARD_FIRING_MODES = [
+  { mode: 'SS', rounds: 1 },
+  { mode: 'SA', rounds: 1 },
+  { mode: 'BF', rounds: 3 },
+  { mode: 'FA', rounds: 6 },
+];
 
 // Apply a Character->Character transform to the active character.
 function updateCharacter(characterId, fn) {
@@ -77,22 +86,25 @@ function findW(character, weaponId) {
 
 // Dropdown of the weapon's eligible reserve pools. Switching returns the rounds
 // currently loaded to their origin pool, then reloads from the chosen pool
-// (reload() does both). Falls back to a static badge when there are no pools.
+// (reload() does both). When the weapon type has no reserve pools at all, the same
+// dropdown is shown but coloured warning-red.
 function ammoSwitcher(c, w) {
   const pools = matchingReserves(c, w.id);
-  if (pools.length === 0) return el('span', { class: 'badge' }, typeName(w.loaded.ammoType));
-
+  const empty = pools.length === 0;
   const countByType = Object.fromEntries(pools.map((p) => [p.ammoType, p.count]));
   const types = pools.map((p) => p.ammoType);
   if (!types.includes(w.loaded.ammoType)) types.unshift(w.loaded.ammoType); // always show current
 
   const sel = el('select', {
-    title: 'Switch ammo — returns loaded rounds to their pool, reloads from the chosen one',
+    class: empty ? 'ammo-empty' : null,
+    title: empty
+      ? 'No reserve ammo for this weapon type — add a pool in Reserve ammo'
+      : 'Switch ammo — returns loaded rounds to their pool, reloads from the chosen one',
     onchange: () => {
       if (sel.value !== w.loaded.ammoType) updateCharacter(c.id, (ch) => reload(ch, w.id, sel.value));
     },
   }, types.map((t) => el('option', { value: t },
-    countByType[t] === undefined ? typeName(t) : `${typeName(t)} (${countByType[t]})`)));
+    `${typeName(t)} (${countByType[t] ?? 0})`))); // missing pool reads as 0
   sel.value = w.loaded.ammoType;
   sel.style.width = 'auto';
   return sel;
@@ -226,6 +238,81 @@ function openAddPoolModal(c) {
   ]);
 }
 
+// All drone names for this character: the explicit drones list unioned with any
+// drone referenced by a weapon's mount (preserves explicit order, new ones last).
+function droneNames(c) {
+  return [...new Set([
+    ...(c.drones ?? []),
+    ...c.weapons.filter((w) => w.mount !== 'carried').map((w) => w.mount),
+  ])];
+}
+
+// Modal to add a drone: just a name. Appended to the bottom of the Drones section.
+function openAddDroneModal(c) {
+  const nameInput = el('input', { type: 'text', placeholder: 'Drone name' });
+  const close = openModal('Add drone', [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Name'), nameInput]),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const name = nameInput.value.trim();
+          if (!name) return;
+          close();
+          updateCharacter(c.id, (ch) => addDrone(ch, name));
+        },
+      }, 'Add'),
+    ]),
+  ]);
+}
+
+// Modal to create a weapon: name, weapon type (ammo category), capacity, and
+// toggle buttons for available firing modes. `mount` ('carried' or a drone name)
+// is set by which "+ Weapon" button opened it.
+function openAddWeaponModal(c, mount) {
+  const nameInput = el('input', { type: 'text', placeholder: 'Weapon name' });
+  const typeSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
+    el('option', { value: ref }, name)));
+  const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
+  capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
+
+  // Firing-mode toggle buttons.
+  const selected = new Set();
+  const modeButtons = STANDARD_FIRING_MODES.map((m) => {
+    const btn = el('button', { type: 'button', class: 'toggle' }, `${m.mode} (${m.rounds})`);
+    btn.addEventListener('click', () => {
+      if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
+      else { selected.add(m.mode); btn.classList.add('on'); }
+    });
+    return btn;
+  });
+
+  const close = openModal('Add weapon', [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Name'), nameInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Weapon type'), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Max ammo capacity'), capInput]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, 'Firing modes'), el('div', { class: 'modes' }, modeButtons)]),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const weapon = createWeapon({
+            name: nameInput.value.trim() || 'New Weapon',
+            ammoCategory: typeSel.value,
+            magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
+            mount,
+            firingModes: STANDARD_FIRING_MODES.filter((m) => selected.has(m.mode)).map((m) => ({ ...m })),
+          });
+          close();
+          updateCharacter(c.id, (ch) => addWeapon(ch, weapon));
+        },
+      }, 'Add'),
+    ]),
+  ]);
+}
+
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
   for (const w of weapons) list.append(weaponCard(c, w, { stashable }));
@@ -240,20 +327,13 @@ export function renderSheet(container, characterId) {
   const runner = c.weapons.filter((w) => w.mount === 'carried');
   const carrying = runner.filter((w) => !w.stashed);
   const stashed = runner.filter((w) => w.stashed);
-  const drones = new Map(); // mount (drone name) -> weapons[], first-seen order
-  for (const w of c.weapons) {
-    if (w.mount === 'carried') continue;
-    if (!drones.has(w.mount)) drones.set(w.mount, []);
-    drones.get(w.mount).push(w);
-  }
+  const droneList = droneNames(c);
 
   // Runner section: <name> with Carrying / Stashed sub-headers.
   container.append(el('div', { class: 'group' }, [
     el('div', { class: 'section-title' }, [
       el('h2', {}, 'Weapons'),
-      el('button', {
-        onclick: () => updateCharacter(c.id, (ch) => ({ ...ch, weapons: [...ch.weapons, createWeapon({ name: 'New Weapon', magazineCapacity: 10 })] })),
-      }, '+ Weapon'),
+      el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, '+ Weapon'),
     ]),
     el('div', { class: 'subgroup-title' }, 'Equipped'),
     carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, 'Nothing equipped.'),
@@ -261,15 +341,34 @@ export function renderSheet(container, characterId) {
     stashed.length ? weaponList(c, stashed, true) : el('div', { class: 'muted' }, 'Nothing unequipped.'),
   ]));
 
-  // Drones section: a sub-header per drone, weapons can't be stashed.
-  if (drones.size > 0) {
-    const children = [el('div', { class: 'section-title' }, [el('h2', {}, 'Drones')])];
-    for (const [name, weapons] of drones) {
-      children.push(el('div', { class: 'subgroup-title' }, name));
-      children.push(weaponList(c, weapons, false));
+  // Drones section: + Drone button; a sub-header per drone with a delete control.
+  const droneChildren = [el('div', { class: 'section-title' }, [
+    el('h2', {}, 'Drones'),
+    el('button', { onclick: () => openAddDroneModal(c) }, '+ Drone'),
+  ])];
+  if (droneList.length === 0) {
+    droneChildren.push(el('div', { class: 'muted' }, 'No drones. Add one to mount weapons on it.'));
+  } else {
+    for (const name of droneList) {
+      const weapons = c.weapons.filter((w) => w.mount === name);
+      droneChildren.push(el('div', { class: 'row spread' }, [
+        el('span', { class: 'subgroup-title' }, name),
+        el('div', { class: 'row' }, [
+          el('button', { onclick: () => openAddWeaponModal(c, name) }, '+ Weapon'),
+          el('button', {
+            class: 'icon danger', title: 'Delete drone',
+            onclick: () => {
+              if (confirm(`Delete drone "${name}"${weapons.length ? ` and its ${weapons.length} weapon(s)` : ''}?`)) {
+                updateCharacter(c.id, (ch) => removeDrone(ch, name));
+              }
+            },
+          }, '🗑'),
+        ]),
+      ]));
+      droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, 'No weapons.'));
     }
-    container.append(el('div', { class: 'group' }, children));
   }
+  container.append(el('div', { class: 'group' }, droneChildren));
 
   // Reserve ammo: its own top-level section.
   container.append(reserveSection(c));
