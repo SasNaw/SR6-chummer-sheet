@@ -11,7 +11,7 @@ export function createWeapon(props = {}) {
     ammoCategory = null, firingModes = [], loaded, notes = '', id,
   } = props;
   return {
-    id: id || newId(),
+    id: id !== undefined ? id : newId(),
     name, ref, mount, magazineCapacity, ammoCategory,
     firingModes: firingModes.map((m) => ({ ...m })),
     loaded: loaded ? { ...loaded } : { ammoType: 'regular', count: 0 },
@@ -22,7 +22,7 @@ export function createWeapon(props = {}) {
 export function createCharacter(props = {}) {
   const { name = '', realName = '', weapons = [], reserves = [], id } = props;
   return {
-    id: id || newId(),
+    id: id !== undefined ? id : newId(),
     name, realName,
     weapons: weapons.map((w) => ({ ...w })),
     reserves: reserves.map((r) => ({ ...r })),
