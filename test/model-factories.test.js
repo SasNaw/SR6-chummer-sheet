@@ -34,4 +34,5 @@ test('createCharacter builds an empty character', () => {
   assert.equal(c.realName, '');
   assert.deepEqual(c.weapons, []);
   assert.deepEqual(c.reserves, []);
+  assert.deepEqual(c.drones, []);
 });

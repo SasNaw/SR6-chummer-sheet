@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createCharacter, createWeapon,
   addWeapon, updateWeapon, removeWeapon, upsertCharacter,
+  addDrone, removeDrone,
 } from '../js/model.js';
 
 test('addWeapon / updateWeapon / removeWeapon', () => {
@@ -24,6 +25,25 @@ test('updateWeapon and removeWeapon no-op on a non-existent id', () => {
   assert.deepEqual(afterUpdate.weapons, c.weapons);
   const afterRemove = removeWeapon(c, 'no-such-id');
   assert.equal(afterRemove.weapons.length, c.weapons.length);
+});
+
+test('addDrone appends a name and dedupes', () => {
+  let c = createCharacter({ name: 'T' });
+  c = addDrone(c, 'R.E.X.');
+  c = addDrone(c, 'Gremlin');
+  c = addDrone(c, 'R.E.X.'); // duplicate ignored
+  assert.deepEqual(c.drones, ['R.E.X.', 'Gremlin']);
+  assert.equal(addDrone(c, ''), c); // empty name is a no-op (same reference)
+});
+
+test('removeDrone removes the drone and its mounted weapons', () => {
+  let c = createCharacter({ name: 'T', drones: ['R.E.X.'] });
+  c = addWeapon(c, createWeapon({ id: 'd1', name: 'Roomsweeper', mount: 'R.E.X.' }));
+  c = addWeapon(c, createWeapon({ id: 'c1', name: 'Predator', mount: 'carried' }));
+  c = removeDrone(c, 'R.E.X.');
+  assert.deepEqual(c.drones, []);
+  assert.equal(c.weapons.length, 1);
+  assert.equal(c.weapons[0].id, 'c1'); // carried weapon untouched
 });
 
 test('upsertCharacter replaces by id or appends', () => {
