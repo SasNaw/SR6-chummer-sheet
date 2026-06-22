@@ -11,6 +11,8 @@ test('deserialize is tolerant of garbage', () => {
   assert.deepEqual(deserialize('not json'), emptyState());
   assert.deepEqual(deserialize('{"version":1}'), emptyState());
   assert.deepEqual(deserialize(null), emptyState());
+  assert.deepEqual(deserialize(''), emptyState());
+  assert.deepEqual(deserialize('{"characters":[null, 42, "x"]}'), emptyState());
 });
 
 test('mergeState upserts incoming characters by id', () => {

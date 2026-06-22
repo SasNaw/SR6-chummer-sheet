@@ -15,6 +15,7 @@ export function deserialize(text) {
   try {
     const obj = JSON.parse(text);
     if (!obj || !Array.isArray(obj.characters)) return emptyState();
+    if (obj.characters.some((c) => typeof c !== 'object' || c === null)) return emptyState();
     return {
       version: 1,
       characters: obj.characters,
@@ -27,7 +28,7 @@ export function deserialize(text) {
 
 export function mergeState(state, incoming) {
   let characters = state.characters;
-  for (const c of incoming.characters) characters = upsertCharacter(characters, c);
+  for (const c of (incoming.characters ?? [])) characters = upsertCharacter(characters, c);
   return { ...state, characters };
 }
 
