@@ -1,4 +1,4 @@
-import { el } from './dom.js';
+import { el, openModal } from './dom.js';
 import { getState, mutate } from '../app.js';
 import {
   fire, spend, addRounds, setLoaded, reload, matchingReserves,
@@ -137,7 +137,10 @@ function editWeapon(c, w) {
 
 function reserveSection(c) {
   const wrap = el('div', { class: 'card' });
-  wrap.append(el('div', { class: 'section-title' }, [el('h2', {}, 'Reserve ammo')]));
+  wrap.append(el('div', { class: 'section-title' }, [
+    el('h2', {}, 'Reserve ammo'),
+    el('button', { onclick: () => openAddPoolModal(c) }, '+ Pool'),
+  ]));
 
   if (c.reserves.length === 0) {
     wrap.append(el('div', { class: 'muted' }, 'No spare ammo tracked.'));
@@ -161,24 +164,24 @@ function reserveSection(c) {
     }
   }
 
-  wrap.append(addReserveForm(c));
   return wrap;
 }
 
-// Inline "add / top up a pool" form. Selecting an existing (category, type) shows
-// a live merge hint; Add calls addReserve, which merges into the existing pool.
-function addReserveForm(c) {
+// Modal to add a pool: weapon + ammo-type dropdowns and a numbers-only amount.
+// Selecting an existing (category, type) shows a live merge hint; Add calls
+// addReserve, which merges into the existing pool.
+function openAddPoolModal(c) {
   const catSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
     el('option', { value: ref }, name)));
   const typeSel = el('select', {}, AMMO_TYPES.map((code) =>
     el('option', { value: code }, typeName(code))));
-  const countInput = el('input', { type: 'number', min: '0', value: '0' });
+  const amount = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'Amount', value: '' });
   const hint = el('div', { class: 'hint' }, '');
 
   const updateHint = () => {
     const existing = c.reserves.find((r) => r.ammoCategory === catSel.value && r.ammoType === typeSel.value);
     if (existing) {
-      const add = Math.max(0, parseInt(countInput.value, 10) || 0);
+      const add = parseInt(amount.value, 10) || 0;
       hint.textContent = `Will merge into ${categoryName(catSel.value)} / ${typeName(typeSel.value)}: ${existing.count} → ${existing.count + add}`;
     } else {
       hint.textContent = '';
@@ -186,23 +189,30 @@ function addReserveForm(c) {
   };
   catSel.addEventListener('change', updateHint);
   typeSel.addEventListener('change', updateHint);
-  countInput.addEventListener('input', updateHint);
+  amount.addEventListener('input', () => {
+    amount.value = amount.value.replace(/[^0-9]/g, ''); // numbers only
+    updateHint();
+  });
   updateHint();
 
-  const addBtn = el('button', {
-    class: 'accent',
-    onclick: () => {
-      const count = Math.max(0, parseInt(countInput.value, 10) || 0);
-      updateCharacter(c.id, (ch) => addReserve(ch, createReservePool({
-        ammoCategory: catSel.value, ammoType: typeSel.value, count,
-      })));
-    },
-  }, '+ Add pool');
-
-  return el('div', { class: 'addpool' }, [
-    el('div', { class: 'muted' }, 'Add / top up a pool'),
-    el('div', { class: 'row' }, [catSel, typeSel, countInput, addBtn]),
+  const close = openModal('Add ammo pool', [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Weapon'), catSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Ammo type'), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Amount'), amount]),
     hint,
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const count = parseInt(amount.value, 10) || 0;
+          close();
+          updateCharacter(c.id, (ch) => addReserve(ch, createReservePool({
+            ammoCategory: catSel.value, ammoType: typeSel.value, count,
+          })));
+        },
+      }, 'Add'),
+    ]),
   ]);
 }
 

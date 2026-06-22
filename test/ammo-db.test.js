@@ -33,3 +33,11 @@ test('typeName turns choice codes into display labels, prettifying unknowns', ()
   assert.equal(typeName('regular'), 'Regular');
   assert.equal(typeName('homebrew_round'), 'Homebrew Round'); // fallback to prettifyRef
 });
+
+test('every ammo type has a caseless variant (code <base>_caseless)', () => {
+  assert.equal(typeName('regular_caseless'), 'Regular (Caseless)');
+  assert.equal(typeName('gel_caseless'), 'Gel (Caseless)');
+  assert.equal(typeName('stick_n_shock_caseless'), 'Stick-n-Shock (Caseless)');
+  assert.ok(AMMO_TYPES.includes('explosive_caseless'));
+  assert.ok(AMMO_TYPES.includes('apds_caseless'));
+});

@@ -17,13 +17,10 @@ export const AMMO_CATEGORIES = {
   ammo_injection_bolt: 'Injection Bolt',
 };
 
-// An ammo type's identity is the raw sr6char "choice" code (e.g. "apds",
-// "stick_n_shock"); these are the human-readable labels for display. Reload
-// matching keys on the raw code, so the code — not the label — is the identity.
-export const AMMO_TYPE_NAMES = {
+// Base ammo types (code -> display label).
+const BASE_AMMO_TYPES = {
   regular: 'Regular',
   apds: 'APDS',
-  apds_caseless: 'APDS (Caseless)',
   explosive: 'Explosive',
   ex_explosive: 'EX-Explosive',
   flechette: 'Flechette',
@@ -36,6 +33,16 @@ export const AMMO_TYPE_NAMES = {
   capsule: 'Capsule',
   injection: 'Injection',
 };
+
+// Every ammo type also exists in a caseless version (code `<base>_caseless`).
+// An ammo type's identity is the raw sr6char "choice" code; reload matching keys
+// on the code, so the code — not the label — is the identity.
+export const AMMO_TYPE_NAMES = Object.fromEntries(
+  Object.entries(BASE_AMMO_TYPES).flatMap(([code, name]) => [
+    [code, name],
+    [`${code}_caseless`, `${name} (Caseless)`],
+  ]),
+);
 
 // Default, user-extensible list of ammo type codes offered when adding a pool.
 export const AMMO_TYPES = Object.keys(AMMO_TYPE_NAMES);

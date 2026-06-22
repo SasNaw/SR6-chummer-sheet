@@ -19,3 +19,27 @@ export function el(tag, attrs = {}, children = []) {
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
+
+// Open a centered modal dialog over a dimmed backdrop. `body` is a node or array
+// of nodes rendered under the title. Closes on backdrop click or Escape.
+// Returns a close() function so callers can dismiss it (e.g. on submit).
+export function openModal(title, body) {
+  const dialog = el('div', { class: 'modal' }, [
+    el('div', { class: 'modal-title' }, title),
+    ...(Array.isArray(body) ? body : [body]),
+  ]);
+  const backdrop = el('div', {
+    class: 'modal-backdrop',
+    onclick: (e) => { if (e.target === backdrop) close(); },
+  }, dialog);
+
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function close() {
+    backdrop.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+
+  document.addEventListener('keydown', onKey);
+  document.body.append(backdrop);
+  return close;
+}
