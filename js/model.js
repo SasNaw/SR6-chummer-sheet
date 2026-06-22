@@ -28,3 +28,25 @@ export function createCharacter(props = {}) {
     reserves: reserves.map((r) => ({ ...r })),
   };
 }
+
+function withCount(weapon, count) {
+  return { ...weapon, loaded: { ...weapon.loaded, count } };
+}
+
+export function fire(weapon, mode) {
+  const fm = weapon.firingModes.find((m) => m.mode === mode);
+  if (!fm) throw new Error(`Unknown firing mode "${mode}"`);
+  return withCount(weapon, Math.max(0, weapon.loaded.count - fm.rounds));
+}
+
+export function spend(weapon, n = 1) {
+  return withCount(weapon, Math.max(0, weapon.loaded.count - n));
+}
+
+export function addRounds(weapon, n = 1) {
+  return withCount(weapon, Math.min(weapon.magazineCapacity, weapon.loaded.count + n));
+}
+
+export function setLoaded(weapon, n) {
+  return withCount(weapon, clamp(n, 0, weapon.magazineCapacity));
+}
