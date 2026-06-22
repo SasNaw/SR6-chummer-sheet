@@ -2,6 +2,7 @@ import { loadState, saveState } from './store.js';
 import { el, clear } from './ui/dom.js';
 import { renderPicker } from './ui/character-picker.js';
 import { renderSheet } from './ui/character-sheet.js';
+import { renderIoBar } from './ui/io.js';
 
 let state = loadState();
 let view = { name: 'picker', characterId: null };
@@ -27,6 +28,7 @@ function render() {
 
   header.append(el('h1', {}, 'SR6 Ammo Tracker'));
   renderPicker(root, { onOpen: goSheet });
+  renderIoBar(root, { onImported: goSheet });
 }
 
 render();
