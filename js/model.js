@@ -1,0 +1,30 @@
+import { newId, clamp } from './util.js';
+
+export function createReservePool(props = {}) {
+  const { ammoCategory, ammoType = 'regular', count = 0 } = props;
+  return { ammoCategory, ammoType, count };
+}
+
+export function createWeapon(props = {}) {
+  const {
+    name = '', ref = '', mount = 'carried', magazineCapacity = 0,
+    ammoCategory = null, firingModes = [], loaded, notes = '', id,
+  } = props;
+  return {
+    id: id || newId(),
+    name, ref, mount, magazineCapacity, ammoCategory,
+    firingModes: firingModes.map((m) => ({ ...m })),
+    loaded: loaded ? { ...loaded } : { ammoType: 'regular', count: 0 },
+    notes,
+  };
+}
+
+export function createCharacter(props = {}) {
+  const { name = '', realName = '', weapons = [], reserves = [], id } = props;
+  return {
+    id: id || newId(),
+    name, realName,
+    weapons: weapons.map((w) => ({ ...w })),
+    reserves: reserves.map((r) => ({ ...r })),
+  };
+}
