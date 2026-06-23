@@ -27,15 +27,15 @@ export function weaponCard(c, w, { stashable = false } = {}) {
     ammoSwitcher(c, w),
   ]));
 
-  // Firing-mode buttons
+  // Firing-mode buttons (ammo-interacting → right-aligned)
   if (w.firingModes.length) {
-    card.append(el('div', { class: 'modes' }, w.firingModes.map((m) =>
+    card.append(el('div', { class: 'modes end' }, w.firingModes.map((m) =>
       el('button', { onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, fire(findW(ch, w.id), m.mode))) },
         `${m.mode} (-${m.rounds})`))));
   }
 
-  // Manual controls
-  card.append(el('div', { class: 'row' }, [
+  // Manual controls (ammo-interacting → right-aligned)
+  card.append(el('div', { class: 'row end' }, [
     el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, spend(findW(ch, w.id), 1))) }, '−'),
     el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, addRounds(findW(ch, w.id), 1))) }, '+'),
     el('button', {

@@ -64,6 +64,7 @@ input, select {
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .spread { justify-content: space-between; }
+.end { justify-content: flex-end; }
 .muted { color: var(--muted); font-size: 13px; }
 .group { display: grid; gap: 10px; }
 
