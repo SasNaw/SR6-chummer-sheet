@@ -49,8 +49,10 @@ export function spiritCard(c, spirit) {
   // across the full width.
   const labels = ATTR_LABELS[lang] || ATTR_LABELS.en;
   const v = spiritAttributeValues(spirit);
+  // Abbreviate labels to their first 3 letters so cells stay narrow (e.g.
+  // Konstitution -> Kon, Body -> Bod, Zustandsmonitor -> Zus).
   const cell = (label, val) => el('div', { class: 'stat' }, [
-    el('span', { class: 'stat-label' }, `${label}: `),
+    el('span', { class: 'stat-label' }, `${label.slice(0, 3)}: `),
     el('span', { class: 'stat-val' }, String(val ?? '–')),
   ]);
   card.append(el('div', { class: 'spirit-stats' }, [
