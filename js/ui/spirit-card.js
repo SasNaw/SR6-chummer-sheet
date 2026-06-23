@@ -39,15 +39,6 @@ export function spiritCard(c, spirit) {
     }, '🗑'),
   ]));
 
-  // Services — the card's hero readout: label sits right beside the counter.
-  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
-  card.append(el('div', { class: 'row spirit-services' }, [
-    el('span', { class: 'services-label' }, t('services')),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
-    el('span', { class: 'count' }, String(spirit.services)),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
-  ]));
-
   // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
   // the last row carries Magic, Essence, and the condition monitor, evenly split
   // across the full width.
@@ -81,6 +72,15 @@ export function spiritCard(c, spirit) {
     pairLine(t('skillsLabel'), spirit.skills, lang),
     pairLine(t('weaknessesLabel'), spirit.weaknesses, lang),
   ]) { if (line) card.append(line); }
+
+  // Services counter — bottom-right of the card.
+  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
+  card.append(el('div', { class: 'row spirit-services' }, [
+    el('span', { class: 'services-label' }, t('services')),
+    el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
+    el('span', { class: 'count' }, String(spirit.services)),
+    el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+  ]));
 
   return card;
 }

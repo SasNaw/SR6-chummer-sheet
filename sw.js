@@ -1,4 +1,4 @@
-const CACHE = 'sr6-ammo-v11';
+const CACHE = 'sr6-ammo-v12';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest', 'css/styles.css',
   'js/app.js', 'js/store.js', 'js/model.js', 'js/util.js', 'js/i18n.js', 'js/catalog.js', 'js/spirit-catalog.js',

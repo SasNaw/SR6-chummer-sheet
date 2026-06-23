@@ -130,15 +130,17 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* Spirit card: 4-column stat table (last row = Magic / Essence / condition
    monitor, evenly split across the full width). Each cell is one inline line,
    "Label: value", with the value in bold. */
-.spirit-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; text-align: center; }
-.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.stat { font-size: 13px; }
+.spirit-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; }
+.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+/* Label left, value pinned right: equal-width columns put every value at the same
+   x within its column, so numbers line up vertically across rows. */
+.stat { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
 
-/* Spirit services — the card's hero counter; label sits right next to it. */
-.spirit-services { align-items: center; gap: 10px; }
+/* Spirit services — bottom-right counter; label sits right next to it. */
+.spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }
 .spirit-services .services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
 
 /* Inline -/value/+ stepper (modal numeric fields) */
