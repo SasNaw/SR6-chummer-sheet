@@ -127,8 +127,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .field { display: grid; gap: 6px; }
 .hint { color: var(--accent); font-size: 13px; min-height: 18px; }
 
-/* Spirit card: attribute chips + label-prefixed list lines */
-.attr-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Spirit card: 4-column stat table (last row = Magic / Essence / condition
+   monitor, evenly split across the full width) + label-prefixed list lines */
+.spirit-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 4px; text-align: center; }
+.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-val { font-family: var(--mono); font-size: 18px; line-height: 1.15; }
 .spirit-label { color: var(--text); font-weight: 600; }
 
 /* Add-spirit modal: optional-power checkboxes */

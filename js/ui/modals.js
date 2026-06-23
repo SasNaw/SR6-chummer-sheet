@@ -180,7 +180,8 @@ export function openAddSpiritModal(c) {
 
   const nameInput = el('input', { type: 'text', placeholder: t('spiritNamePlaceholder') });
   const typeSel = el('select', {}, spirits.map((s) => el('option', { value: s.id }, s.label)));
-  const forceInput = el('input', { type: 'text', inputmode: 'numeric', value: '3' });
+  const forceInput = el('input', { type: 'number', min: '1', step: '1', value: '3' });
+  const servicesInput = el('input', { type: 'number', min: '0', step: '1', value: '1' });
   const optBox = el('div', { class: 'opt-powers' });
   const countLabel = el('div', { class: 'muted' }, '');
 
@@ -206,16 +207,14 @@ export function openAddSpiritModal(c) {
     countLabel.textContent = t('optionalPowersCount', selected.size, cap);
   }
   typeSel.addEventListener('change', () => { selected.clear(); rebuildOptional(); });
-  forceInput.addEventListener('input', () => {
-    forceInput.value = forceInput.value.replace(/[^0-9]/g, '');
-    rebuildOptional();
-  });
+  forceInput.addEventListener('input', rebuildOptional);
   rebuildOptional();
 
   const close = openModal(t('addSpiritTitle'), [
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('spiritType')), typeSel]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('force')), forceInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('services')), servicesInput]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('optionalPowersLabel')), optBox, countLabel]),
     el('div', { class: 'row spread' }, [
       el('button', { onclick: () => close() }, t('cancel')),
@@ -226,6 +225,7 @@ export function openAddSpiritModal(c) {
           if (!sp) return;
           const spirit = createSpirit({
             name: nameInput.value.trim(), type: sp.id, typeName: sp.name, force: Math.max(1, force()),
+            services: Math.max(0, parseInt(servicesInput.value, 10) || 0),
             attributes: sp.attributes, conditionMonitor: sp.conditionMonitor,
             initiative: sp.initiative, astralInitiative: sp.astralInitiative,
             actions: sp.actions, movement: sp.movement,

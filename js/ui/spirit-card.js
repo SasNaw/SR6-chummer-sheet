@@ -38,21 +38,25 @@ export function spiritCard(c, spirit) {
     }, '🗑'),
   ]));
 
-  // Force + condition monitor headline.
-  card.append(el('div', { class: 'row spread' }, [
-    el('div', { class: 'count' }, [String(spirit.force), el('span', { class: 'cap' }, ` ${t('force')}`)]),
-    el('div', { class: 'muted' }, `${t('conditionMonitor')}: ${spiritConditionMonitor(spirit)}`),
-  ]));
+  // Force headline (the condition monitor lives in the stat table below).
+  card.append(el('div', { class: 'count' }, [String(spirit.force), el('span', { class: 'cap' }, ` ${t('force')}`)]));
 
-  // Attributes grid (computed at this Force).
+  // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
+  // the last row carries Magic, Essence, and the condition monitor, evenly split
+  // across the full width.
   const labels = ATTR_LABELS[lang] || ATTR_LABELS.en;
-  const values = spiritAttributeValues(spirit);
-  const chips = Object.keys(labels)
-    .filter((k) => k in values)
-    .map((k) => el('span', { class: 'badge' }, `${labels[k]} ${values[k]}`));
-  if (chips.length) {
-    card.append(el('div', { class: 'attr-grid' }, chips));
-  }
+  const v = spiritAttributeValues(spirit);
+  const cell = (label, val) => el('div', { class: 'stat' }, [
+    el('div', { class: 'stat-label' }, label),
+    el('div', { class: 'stat-val' }, String(val ?? '–')),
+  ]);
+  card.append(el('div', { class: 'spirit-stats' }, [
+    cell(labels.body, v.body), cell(labels.agility, v.agility), cell(labels.reaction, v.reaction), cell(labels.strength, v.strength),
+    cell(labels.willpower, v.willpower), cell(labels.logic, v.logic), cell(labels.intuition, v.intuition), cell(labels.charisma, v.charisma),
+    el('div', { class: 'stat-row3' }, [
+      cell(labels.magic, v.magic), cell(labels.essence, v.essence), cell(t('conditionMonitor'), spiritConditionMonitor(spirit)),
+    ]),
+  ]));
 
   // Derived display strings (Force-independent notation, faithful to the source).
   const derived = [

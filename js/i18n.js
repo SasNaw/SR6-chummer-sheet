@@ -88,7 +88,7 @@ export const STRINGS = {
     clearCatalogConfirm: 'Clear the loaded weapon catalog?',
     findWeapon: 'Find weapon (catalog)',
     // Magic section — summoned spirits
-    summonedSpirits: 'Summoned spirits',
+    summonedSpirits: 'Summoned spirit',
     addSpirit: '+ Spirit',
     addSpiritTitle: 'Summon spirit',
     spiritType: 'Spirit type',
@@ -191,7 +191,7 @@ export const STRINGS = {
     catalogInvalid: 'Diese Datei ist kein Waffenkatalog.',
     clearCatalogConfirm: 'Geladenen Waffenkatalog löschen?',
     findWeapon: 'Waffe suchen (Katalog)',
-    summonedSpirits: 'Beschworene Geister',
+    summonedSpirits: 'Beschworener Geist',
     addSpirit: '+ Geist',
     addSpiritTitle: 'Geist beschwören',
     spiritType: 'Geistertyp',
