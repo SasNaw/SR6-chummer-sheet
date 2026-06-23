@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSpiritCatalog, localizedName, spiritList } from '../js/spirit-catalog.js';
+import { isSpiritCatalog, localizedPair, spiritList } from '../js/spirit-catalog.js';
 
 const CAT = {
   spirits: {
@@ -34,11 +34,11 @@ test('isSpiritCatalog validates shape', () => {
   assert.equal(isSpiritCatalog(null), false);
 });
 
-test('localizedName falls back to English when German is missing', () => {
-  assert.equal(localizedName({ en: 'Guard', de: 'Schutz' }, 'de'), 'Schutz');
-  assert.equal(localizedName({ en: 'Guard', de: null }, 'de'), 'Guard'); // no DE -> EN
-  assert.equal(localizedName({ en: 'Guard', de: 'Schutz' }, 'en'), 'Guard');
-  assert.equal(localizedName(null, 'de'), null);
+test('localizedPair falls back to English when German is missing', () => {
+  assert.equal(localizedPair({ en: 'Guard', de: 'Schutz' }, 'de'), 'Schutz');
+  assert.equal(localizedPair({ en: 'Guard', de: null }, 'de'), 'Guard'); // no DE -> EN
+  assert.equal(localizedPair({ en: 'Guard', de: 'Schutz' }, 'en'), 'Guard');
+  assert.equal(localizedPair(null, 'de'), null);
 });
 
 test('spiritList yields labelled, sorted entries', () => {

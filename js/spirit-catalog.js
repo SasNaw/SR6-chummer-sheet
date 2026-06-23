@@ -18,7 +18,7 @@ export function isSpiritCatalog(obj) {
 
 // A localized name from an {en, de} pair (spirit names, skills, powers,
 // weaknesses). Falls back to English when the German value is missing.
-export function localizedName(entry, lang) {
+export function localizedPair(entry, lang) {
   if (!entry) return null;
   return (lang === 'de' && entry.de) ? entry.de : (entry.en || null);
 }
@@ -27,7 +27,7 @@ export function localizedName(entry, lang) {
 export function spiritList(catalog, lang) {
   if (!isSpiritCatalog(catalog)) return [];
   return Object.values(catalog.spirits)
-    .map((s) => ({ id: s.id, label: localizedName(s.name, lang), spirit: s }))
+    .map((s) => ({ id: s.id, label: localizedPair(s.name, lang), spirit: s }))
     .sort((a, b) => String(a.label).localeCompare(String(b.label)));
 }
 
