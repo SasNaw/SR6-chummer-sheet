@@ -1,7 +1,11 @@
-import { el, openModal } from './dom.js';
+import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
-import { addReserve, createReservePool, addDrone, createWeapon, addWeapon } from '../model.js';
+import {
+  addReserve, createReservePool, addDrone, createWeapon, addWeapon,
+  createSpirit, addSpirit, optionalPowerCap,
+} from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
+import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
 import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
 
 // Build category/type <option>s sorted by their localized label.
@@ -164,4 +168,75 @@ export function openAddWeaponModal(c, mount) {
   );
 
   const close = openModal(t('addWeaponTitle'), fields);
+}
+
+// Modal to summon a spirit from the loaded spirit catalog: name, type, Force, and
+// an optional-powers selection capped at floor(Force/3). The card is built from a
+// snapshot of the chosen catalog entry (see createSpirit). Only opened when a
+// spirit catalog is loaded.
+export function openAddSpiritModal(c) {
+  const spirits = spiritList(getSpiritCatalog(), uiLang()); // [{ id, label, spirit }]
+  if (spirits.length === 0) return;
+
+  const nameInput = el('input', { type: 'text', placeholder: t('spiritNamePlaceholder') });
+  const typeSel = el('select', {}, spirits.map((s) => el('option', { value: s.id }, s.label)));
+  const forceInput = el('input', { type: 'text', inputmode: 'numeric', value: '3' });
+  const optBox = el('div', { class: 'opt-powers' });
+  const countLabel = el('div', { class: 'muted' }, '');
+
+  const selected = new Set(); // keyed by an optional power's English name
+  const spiritOf = (id) => (spirits.find((s) => s.id === id) || {}).spirit;
+  const force = () => parseInt(forceInput.value, 10) || 0;
+
+  function rebuildOptional() {
+    const sp = spiritOf(typeSel.value);
+    const opts = (sp && sp.optionalPowers) || [];
+    const cap = optionalPowerCap(force());
+    clear(optBox);
+    for (const p of opts) {
+      const cb = el('input', { type: 'checkbox' });
+      cb.checked = selected.has(p.en);
+      cb.disabled = !cb.checked && selected.size >= cap;
+      cb.addEventListener('change', () => {
+        if (cb.checked) selected.add(p.en); else selected.delete(p.en);
+        rebuildOptional();
+      });
+      optBox.append(el('label', { class: 'opt-power' }, [cb, localizedPair(p, uiLang())]));
+    }
+    countLabel.textContent = t('optionalPowersCount', selected.size, cap);
+  }
+  typeSel.addEventListener('change', () => { selected.clear(); rebuildOptional(); });
+  forceInput.addEventListener('input', () => {
+    forceInput.value = forceInput.value.replace(/[^0-9]/g, '');
+    rebuildOptional();
+  });
+  rebuildOptional();
+
+  const close = openModal(t('addSpiritTitle'), [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('spiritType')), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('force')), forceInput]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('optionalPowersLabel')), optBox, countLabel]),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, t('cancel')),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const sp = spiritOf(typeSel.value);
+          if (!sp) return;
+          const spirit = createSpirit({
+            name: nameInput.value.trim(), type: sp.id, typeName: sp.name, force: Math.max(1, force()),
+            attributes: sp.attributes, conditionMonitor: sp.conditionMonitor,
+            initiative: sp.initiative, astralInitiative: sp.astralInitiative,
+            actions: sp.actions, movement: sp.movement,
+            skills: sp.skills, powers: sp.powers,
+            optionalPowers: (sp.optionalPowers || []).filter((p) => selected.has(p.en)),
+            weaknesses: sp.weaknesses,
+          });
+          close();
+          updateCharacter(c.id, (ch) => addSpirit(ch, spirit));
+        },
+      }, t('add')),
+    ]),
+  ]);
 }

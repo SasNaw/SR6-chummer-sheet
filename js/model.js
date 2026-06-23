@@ -29,13 +29,14 @@ export function weaponDisplayName(weapon) {
 }
 
 export function createCharacter(props = {}) {
-  const { name = '', realName = '', weapons = [], reserves = [], drones = [], magic = false, id } = props;
+  const { name = '', realName = '', weapons = [], reserves = [], drones = [], spirits = [], magic = false, id } = props;
   return {
     id: id !== undefined ? id : newId(),
     name, realName, magic,
     weapons: weapons.map((w) => ({ ...w })),
     reserves: reserves.map((r) => ({ ...r })),
     drones: [...drones],
+    spirits: spirits.map((s) => ({ ...s })),
   };
 }
 
@@ -154,6 +155,63 @@ export function removeDrone(character, name) {
     drones: (character.drones ?? []).filter((d) => d !== name),
     weapons: character.weapons.filter((w) => w.mount !== name),
   };
+}
+
+// A summoned spirit. Self-contained snapshot of its catalog entry (attributes are
+// Force offsets, powers/skills/weaknesses are {en,de} pairs) plus the chosen Force,
+// the selected optional powers, and an owed-services counter. Snapshotting (like
+// weapons) keeps cards renderable after the catalog is cleared or moved devices.
+export function createSpirit(props = {}) {
+  const {
+    name = '', type = '', typeName = { en: '', de: null }, force = 0, services = 0,
+    attributes = {}, conditionMonitor = '',
+    initiative = '', astralInitiative = '', actions = '', movement = '',
+    skills = [], powers = [], optionalPowers = [], weaknesses = [], id,
+  } = props;
+  const copyPairs = (list) => list.map((p) => ({ ...p }));
+  return {
+    id: id !== undefined ? id : newId(),
+    name, type, typeName: { ...typeName }, force, services,
+    attributes: { ...attributes }, conditionMonitor,
+    initiative, astralInitiative, actions, movement,
+    skills: copyPairs(skills), powers: copyPairs(powers),
+    optionalPowers: copyPairs(optionalPowers), weaknesses: copyPairs(weaknesses),
+  };
+}
+
+export function addSpirit(character, spirit) {
+  return { ...character, spirits: [...(character.spirits ?? []), { ...spirit }] };
+}
+
+export function updateSpirit(character, spiritId, changes) {
+  return {
+    ...character,
+    spirits: (character.spirits ?? []).map((s) => (s.id === spiritId ? { ...s, ...changes } : s)),
+  };
+}
+
+export function removeSpirit(character, spiritId) {
+  return { ...character, spirits: (character.spirits ?? []).filter((s) => s.id !== spiritId) };
+}
+
+// Actual attribute values at the spirit's Force: Force + offset, floored at the
+// SR6 minimum of 1.
+export function spiritAttributeValues(spirit) {
+  const out = {};
+  for (const [key, offset] of Object.entries(spirit.attributes || {})) {
+    out[key] = Math.max(1, spirit.force + offset);
+  }
+  return out;
+}
+
+// SR6 spirit physical condition monitor: 8 + (Force / 2, rounded up).
+export function spiritConditionMonitor(spirit) {
+  return 8 + Math.ceil(spirit.force / 2);
+}
+
+// How many optional powers a spirit of the given Force may take: Force / 3, floored.
+export function optionalPowerCap(force) {
+  return Math.floor(force / 3);
 }
 
 export function upsertCharacter(characters, character) {

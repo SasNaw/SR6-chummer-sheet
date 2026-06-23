@@ -127,6 +127,15 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .field { display: grid; gap: 6px; }
 .hint { color: var(--accent); font-size: 13px; min-height: 18px; }
 
+/* Spirit card: attribute chips + label-prefixed list lines */
+.attr-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.spirit-label { color: var(--text); font-weight: 600; }
+
+/* Add-spirit modal: optional-power checkboxes */
+.opt-powers { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; }
+.opt-power { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.opt-power input { width: auto; min-height: 0; }
+
 @keyframes modal-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {

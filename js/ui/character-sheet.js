@@ -3,7 +3,9 @@ import { getState, t, rerender } from '../app.js';
 import { setReserveCount, removeReserve, removeDrone } from '../model.js';
 import { updateCharacter, catName, typeNameL, droneNames } from './sheet-common.js';
 import { weaponCard } from './weapon-card.js';
-import { openAddWeaponModal, openAddDroneModal, openAddPoolModal } from './modals.js';
+import { spiritCard } from './spirit-card.js';
+import { getSpiritCatalog } from '../spirit-catalog.js';
+import { openAddWeaponModal, openAddDroneModal, openAddPoolModal, openAddSpiritModal } from './modals.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -90,12 +92,34 @@ export function renderSheet(container, characterId) {
   ]));
 
   if (tab === 'magic') {
-    sheet.append(el('div', { class: 'group' }, el('div', { class: 'muted' }, t('magicSection'))));
+    magicTab(sheet, c);
   } else {
     weaponsTab(sheet, c);
   }
 
   container.append(sheet);
+}
+
+function magicTab(container, c) {
+  const hasCatalog = Boolean(getSpiritCatalog());
+  const addBtn = el('button', {
+    disabled: hasCatalog ? null : 'true',
+    onclick: hasCatalog ? () => openAddSpiritModal(c) : null,
+  }, t('addSpirit'));
+
+  const children = [el('div', { class: 'section-title' }, [el('h2', {}, t('summonedSpirits')), addBtn])];
+  if (!hasCatalog) children.push(el('div', { class: 'hint' }, t('needSpiritCatalog')));
+
+  const spirits = c.spirits ?? [];
+  if (spirits.length) {
+    const list = el('div', { class: 'list' });
+    for (const s of spirits) list.append(spiritCard(c, s));
+    children.push(list);
+  } else {
+    children.push(el('div', { class: 'muted' }, t('noSpirits')));
+  }
+
+  container.append(el('div', { class: 'group' }, children));
 }
 
 function weaponsTab(container, c) {
