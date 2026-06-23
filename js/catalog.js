@@ -18,11 +18,17 @@ export function pickName(entry, lang) {
   return (lang === 'de' && entry.nameDe) ? entry.nameDe : (entry.name || null);
 }
 
+// Genesis appends a pack size like " (10x)" to ammo names; drop it for display.
+function stripPack(s) {
+  return typeof s === 'string' ? s.replace(/\s*\(\d+\s*x\)\s*$/i, '') : s;
+}
+
 // Localized name from an {id: {en, de}} map (ammoCategories / ammoTypes).
 export function localizedName(map, id, lang) {
   const e = map && map[id];
   if (!e) return null;
-  return (lang === 'de' && e.de) ? e.de : (e.en || null);
+  const name = (lang === 'de' && e.de) ? e.de : (e.en || null);
+  return name ? stripPack(name) : null;
 }
 
 export function catalogCategoryName(catalog, id, lang) {

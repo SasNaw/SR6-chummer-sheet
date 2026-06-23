@@ -18,6 +18,22 @@ test('S4T0: character identity', () => {
   assert.equal(c.realName, 'Kenji "Ken" Sato');
 });
 
+test('S4T0: a catalog overrides the built-in weapon defs on import', () => {
+  const catalog = {
+    weapons: {
+      fn_har: { name: 'FN HAR', nameDe: 'FN Sturmgewehr', magazineCapacity: 35, ammoCategory: 'ammo_rifles', firingModes: ['SA', 'BF', 'FA'] },
+    },
+  };
+  const c = parseSr6CharDoc(load('S4T0.xml'), catalog, 'de');
+  const har = c.weapons.find((w) => w.ref === 'fn_har');
+  assert.equal(har.name, 'FN Sturmgewehr');         // localized catalog name
+  assert.equal(har.magazineCapacity, 35);            // catalog value, not built-in 20
+  assert.deepEqual(har.firingModes, [{ mode: 'SA', rounds: 1 }, { mode: 'BF', rounds: 3 }, { mode: 'FA', rounds: 6 }]);
+  // A ref not in the catalog falls back to the built-in table.
+  const ares = c.weapons.find((w) => w.ref === 'ares_predator_vi');
+  assert.equal(ares.name, 'Ares Predator VI');
+});
+
 test('S4T0: five deduped firearms with correct mounts', () => {
   const c = parseSr6CharDoc(load('S4T0.xml'));
   assert.equal(c.weapons.length, 5);

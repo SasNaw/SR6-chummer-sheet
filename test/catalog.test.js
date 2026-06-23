@@ -10,7 +10,7 @@ const CAT = {
     fn_har: { id: 'fn_har', name: 'FN HAR', nameDe: 'FN HAR', ammoCategory: 'ammo_rifles', magazineCapacity: 35, firingModes: ['SA', 'BF', 'FA'] },
     ares_predator_vi: { id: 'ares_predator_vi', name: 'Ares Predator VI', nameDe: 'Ares Predator VI', ammoCategory: 'ammo_heavy_smg', magazineCapacity: 15, firingModes: ['SA', 'BF'] },
   },
-  ammoCategories: { ammo_rifles: { en: 'Rifles', de: 'Gewehr' } },
+  ammoCategories: { ammo_rifles: { en: 'Rifles (10x)', de: 'Gewehr (10x)' } },
   ammoTypes: { apds: { en: 'APDS', de: 'APDS-Munition' }, regular: { en: 'Regular', de: null } },
 };
 

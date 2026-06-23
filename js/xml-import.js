@@ -1,6 +1,20 @@
 import { createCharacter, createWeapon, createReservePool } from './model.js';
-import { getWeaponDef } from './weapons-db.js';
+import { getWeaponDef, DEFAULT_MODE_ROUNDS } from './weapons-db.js';
 import { prettifyRef } from './util.js';
+
+// Resolve a weapon ref to a definition, preferring the loaded catalog (its 200+
+// weapons) over the small built-in table. Returns { name, magazineCapacity,
+// ammoCategory, firingModes:[{mode,rounds}] }.
+function resolveWeaponDef(ref, catalog, lang) {
+  const w = catalog && catalog.weapons && catalog.weapons[ref];
+  if (!w) return getWeaponDef(ref);
+  return {
+    name: (lang === 'de' && w.nameDe) ? w.nameDe : (w.name || prettifyRef(ref)),
+    magazineCapacity: w.magazineCapacity ?? 0,
+    ammoCategory: w.ammoCategory ?? null,
+    firingModes: (w.firingModes || []).map((m) => ({ mode: m, rounds: DEFAULT_MODE_ROUNDS[m] ?? 1 })),
+  };
+}
 
 const MAX_MOUNT_DEPTH = 20;
 
@@ -76,7 +90,7 @@ function defaultAmmoType(reserves, ammoCategory) {
   return m ? m.ammoType : 'regular';
 }
 
-export function parseSr6CharDoc(doc) {
+export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
   const items = Array.from(doc.getElementsByTagName('item'));
   const idx = indexItems(items);
 
@@ -92,7 +106,7 @@ export function parseSr6CharDoc(doc) {
 
   const weapons = Array.from(deduped.values()).map((it) => {
     const ref = attr(it, 'ref');
-    const def = getWeaponDef(ref);
+    const def = resolveWeaponDef(ref, catalog, lang);
     return createWeapon({
       name: def.name,
       ref,
@@ -113,7 +127,7 @@ export function parseSr6CharDoc(doc) {
   });
 }
 
-export function importFromXmlString(xmlString) {
+export function importFromXmlString(xmlString, catalog = null, lang = 'en') {
   const doc = new DOMParser().parseFromString(xmlString, 'text/xml');
-  return parseSr6CharDoc(doc);
+  return parseSr6CharDoc(doc, catalog, lang);
 }

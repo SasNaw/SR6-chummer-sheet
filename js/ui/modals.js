@@ -1,23 +1,28 @@
 import { el, openModal } from './dom.js';
 import { t } from '../app.js';
 import { addReserve, createReservePool, addDrone, createWeapon, addWeapon } from '../model.js';
-import { AMMO_CATEGORIES, AMMO_TYPES } from '../ammo-db.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
-import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES } from './sheet-common.js';
+import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
+
+// Build category/type <option>s sorted by their localized label.
+const byLabel = (fn) => (a, b) => fn(a).localeCompare(fn(b));
+function categoryOptions(extra = []) {
+  return [...new Set([...ammoCategoryIds(), ...extra])].sort(byLabel(catName))
+    .map((ref) => el('option', { value: ref }, catName(ref)));
+}
+function typeOptions() {
+  return ammoTypeIds().slice().sort(byLabel(typeNameL))
+    .map((code) => el('option', { value: code }, typeNameL(code)));
+}
 
 // Modal to add a pool: weapon + ammo-type dropdowns and a numbers-only amount.
 // Selecting an existing (category, type) shows a live merge hint; Add calls
 // addReserve, which merges into the existing pool.
 export function openAddPoolModal(c) {
-  // Built-in categories plus any category the character's weapons actually use
-  // (catalog-imported weapons may reference categories outside the built-in set).
-  const cats = [...new Set([
-    ...Object.keys(AMMO_CATEGORIES),
-    ...c.weapons.map((w) => w.ammoCategory).filter(Boolean),
-  ])];
-  const catSel = el('select', {}, cats.map((ref) => el('option', { value: ref }, catName(ref))));
-  const typeSel = el('select', {}, AMMO_TYPES.map((code) =>
-    el('option', { value: code }, typeNameL(code))));
+  // Catalog (or built-in) categories, plus any category the character's weapons
+  // actually use, so every relevant pool is addable.
+  const catSel = el('select', {}, categoryOptions(c.weapons.map((w) => w.ammoCategory).filter(Boolean)));
+  const typeSel = el('select', {}, typeOptions());
   const amount = el('input', { type: 'text', inputmode: 'numeric', placeholder: t('amount'), value: '' });
   const hint = el('div', { class: 'hint' }, '');
 
@@ -84,8 +89,7 @@ export function openAddDroneModal(c) {
 // is set by which "+ Weapon" button opened it.
 export function openAddWeaponModal(c, mount) {
   const nameInput = el('input', { type: 'text', placeholder: t('weaponNamePlaceholder') });
-  const typeSel = el('select', {}, Object.keys(AMMO_CATEGORIES).map((ref) =>
-    el('option', { value: ref }, catName(ref))));
+  const typeSel = el('select', {}, categoryOptions());
   const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
   capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
 
