@@ -309,9 +309,10 @@ function openAddWeaponModal(c, mount) {
     const byLabel = new Map(entries.map((e) => [e.label, e]));
     const dl = el('datalist', { id: 'addweapon-catalog' }, entries.map((e) => el('option', { value: e.label })));
     const finder = el('input', { type: 'text', placeholder: t('findWeapon'), list: 'addweapon-catalog', autocomplete: 'off' });
-    // 'input' fires immediately when an option is chosen from the datalist (and
-    // on each keystroke); we autofill as soon as the value matches a catalog name.
-    finder.addEventListener('input', () => {
+    // Autofill as soon as the value matches a catalog name. Bound to both 'input'
+    // and 'change' so picking a datalist suggestion fills immediately on every
+    // browser (some fire only one of the two).
+    const applyPick = () => {
       const e = byLabel.get(finder.value);
       if (!e) return;
       nameInput.value = e.label;
@@ -323,7 +324,9 @@ function openAddWeaponModal(c, mount) {
         typeSel.value = e.ammoCategory;
       }
       for (const m of STANDARD_FIRING_MODES) setMode(m.mode, (e.firingModes || []).includes(m.mode));
-    });
+    };
+    finder.addEventListener('input', applyPick);
+    finder.addEventListener('change', applyPick);
     fields.push(el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('findWeapon')), finder]), dl);
   }
 

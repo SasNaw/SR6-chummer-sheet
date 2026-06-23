@@ -1,7 +1,7 @@
-const CACHE = 'sr6-ammo-v1';
+const CACHE = 'sr6-ammo-v2';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest', 'css/styles.css',
-  'js/app.js', 'js/store.js', 'js/model.js', 'js/util.js',
+  'js/app.js', 'js/store.js', 'js/model.js', 'js/util.js', 'js/i18n.js', 'js/catalog.js',
   'js/ammo-db.js', 'js/weapons-db.js', 'js/xml-import.js',
   'js/ui/dom.js', 'js/ui/character-picker.js', 'js/ui/character-sheet.js', 'js/ui/io.js',
   'icons/icon-192.png', 'icons/icon-512.png',
