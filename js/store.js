@@ -3,7 +3,7 @@ import { upsertCharacter } from './model.js';
 export const STORAGE_KEY = 'sr6-ammo-tracker';
 
 export function emptyState() {
-  return { version: 1, characters: [], activeId: null };
+  return { version: 1, characters: [], activeId: null, lang: 'en' };
 }
 
 export function serialize(state) {
@@ -20,6 +20,7 @@ export function deserialize(text) {
       version: 1,
       characters: obj.characters,
       activeId: obj.activeId ?? null,
+      lang: obj.lang === 'de' ? 'de' : 'en',
     };
   } catch {
     return emptyState();

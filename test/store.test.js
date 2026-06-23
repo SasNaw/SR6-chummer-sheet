@@ -3,8 +3,14 @@ import assert from 'node:assert/strict';
 import { emptyState, serialize, deserialize, mergeState } from '../js/store.js';
 
 test('serialize/deserialize round-trips state', () => {
-  const s = { version: 1, characters: [{ id: 'a', name: 'A', realName: '', weapons: [], reserves: [] }], activeId: 'a' };
+  const s = { version: 1, characters: [{ id: 'a', name: 'A', realName: '', weapons: [], reserves: [] }], activeId: 'a', lang: 'de' };
   assert.deepEqual(deserialize(serialize(s)), s);
+});
+
+test('deserialize defaults lang to en and only accepts de/en', () => {
+  assert.equal(deserialize('{"characters":[]}').lang, 'en');
+  assert.equal(deserialize('{"characters":[],"lang":"de"}').lang, 'de');
+  assert.equal(deserialize('{"characters":[],"lang":"xx"}').lang, 'en');
 });
 
 test('deserialize is tolerant of garbage', () => {

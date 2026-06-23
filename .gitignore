@@ -9,3 +9,10 @@ node_modules/
 
 # Logs
 *.log
+
+# Licensed weapon catalog generated locally from Genesis — never commit.
+# The generator writes into data-local/, which is ignored wholesale.
+/data-local/
+weapons-catalog.json
+*.local.json
+*-catalog.json

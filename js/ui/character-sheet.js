@@ -1,11 +1,12 @@
 import { el, openModal } from './dom.js';
-import { getState, mutate } from '../app.js';
+import { getState, mutate, t } from '../app.js';
 import {
   fire, spend, addRounds, setLoaded, reload, matchingReserves,
   updateWeapon, removeWeapon, addWeapon, addReserve, setReserveCount, removeReserve,
   createWeapon, createReservePool, upsertCharacter, addDrone, removeDrone,
 } from '../model.js';
 import { AMMO_CATEGORIES, AMMO_TYPES, categoryName, typeName } from '../ammo-db.js';
+import { getCatalog, catalogCategoryName, catalogTypeName, catalogWeaponList } from '../catalog.js';
 
 // Standard SR6 firing modes offered when creating a weapon (round cost per mode;
 // editable later via the weapon's edit dialog).
@@ -15,6 +16,16 @@ const STANDARD_FIRING_MODES = [
   { mode: 'BF', rounds: 3 },
   { mode: 'FA', rounds: 6 },
 ];
+
+// Localized display names: English uses our built-in tables; German prefers the
+// loaded catalog's translations, falling back to English.
+function uiLang() { return getState().lang || 'en'; }
+function catName(ref) {
+  return uiLang() === 'de' ? (catalogCategoryName(getCatalog(), ref, 'de') || categoryName(ref)) : categoryName(ref);
+}
+function typeNameL(code) {
+  return uiLang() === 'de' ? (catalogTypeName(getCatalog(), code, 'de') || typeName(code)) : typeName(code);
+}
 
 // Apply a Character->Character transform to the active character.
 function updateCharacter(characterId, fn) {
@@ -32,10 +43,10 @@ function weaponCard(c, w, { stashable = false } = {}) {
   card.append(el('div', { class: 'row spread' }, [
     el('h2', {}, w.name),
     el('div', { class: 'row' }, [
-      el('button', { class: 'icon', title: 'Edit', onclick: () => editWeapon(c, w) }, '✎'),
+      el('button', { class: 'icon', title: t('edit'), onclick: () => editWeapon(c, w) }, '✎'),
       el('button', {
-        class: 'icon danger', title: 'Remove',
-        onclick: () => { if (confirm(`Remove ${w.name}?`)) updateCharacter(c.id, (ch) => removeWeapon(ch, w.id)); },
+        class: 'icon danger', title: t('remove'),
+        onclick: () => { if (confirm(t('removeWeaponConfirm', w.name))) updateCharacter(c.id, (ch) => removeWeapon(ch, w.id)); },
       }, '🗑'),
     ]),
   ]));
@@ -59,11 +70,11 @@ function weaponCard(c, w, { stashable = false } = {}) {
     el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, addRounds(findW(ch, w.id), 1))) }, '+'),
     el('button', {
       onclick: () => {
-        const n = parseInt(prompt('Set loaded rounds:', String(w.loaded.count)) ?? '', 10);
+        const n = parseInt(prompt(t('setLoadedPrompt'), String(w.loaded.count)) ?? '', 10);
         if (Number.isInteger(n)) updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, setLoaded(findW(ch, w.id), n)));
       },
-    }, 'Set'),
-    el('button', { class: 'accent', onclick: () => doReload(c, w) }, 'Reload'),
+    }, t('set')),
+    el('button', { class: 'accent', onclick: () => doReload(c, w) }, t('reload')),
   ]));
 
   if (w.notes) card.append(el('div', { class: 'muted' }, w.notes));
@@ -74,7 +85,7 @@ function weaponCard(c, w, { stashable = false } = {}) {
     cb.checked = !w.stashed; // checked = equipped, unchecked = unequipped
     cb.addEventListener('change', () =>
       updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, { stashed: !cb.checked })));
-    card.append(el('div', { class: 'card-foot' }, el('label', { class: 'carried-toggle' }, [cb, 'Equipped'])));
+    card.append(el('div', { class: 'card-foot' }, el('label', { class: 'carried-toggle' }, [cb, t('equipped')])));
   }
 
   return card;
@@ -97,14 +108,12 @@ function ammoSwitcher(c, w) {
 
   const sel = el('select', {
     class: empty ? 'ammo-empty' : null,
-    title: empty
-      ? 'No reserve ammo for this weapon type — add a pool in Reserve ammo'
-      : 'Switch ammo — returns loaded rounds to their pool, reloads from the chosen one',
+    title: empty ? t('noAmmoTitle') : t('ammoSwitchTitle'),
     onchange: () => {
       if (sel.value !== w.loaded.ammoType) updateCharacter(c.id, (ch) => reload(ch, w.id, sel.value));
     },
   }, types.map((t) => el('option', { value: t },
-    `${typeName(t)} (${countByType[t] ?? 0})`))); // missing pool reads as 0
+    `${typeNameL(t)} (${countByType[t] ?? 0})`))); // missing pool reads as 0
   sel.value = w.loaded.ammoType;
   sel.style.width = 'auto';
   return sel;
@@ -118,26 +127,24 @@ function ammoSwitcher(c, w) {
 function doReload(c, w) {
   const pools = matchingReserves(c, w.id);
   if (pools.length === 0) {
-    alert(`No reserve ammo for ${categoryName(w.ammoCategory)}. Add a pool in the Reserve section or use Set.`);
+    alert(t('noReserveForCategory', catName(w.ammoCategory)));
     return;
   }
   if (!pools.some((p) => p.ammoType === w.loaded.ammoType)) {
-    alert(`No ${typeName(w.loaded.ammoType)} in reserve. Pick an available type from the Ammo dropdown.`);
+    alert(t('noTypeInReserve', typeNameL(w.loaded.ammoType)));
     return;
   }
   updateCharacter(c.id, (ch) => reload(ch, w.id, w.loaded.ammoType));
 }
 
 function editWeapon(c, w) {
-  const name = prompt('Weapon name:', w.name);
+  const name = prompt(t('weaponNamePrompt'), w.name);
   if (name == null) return;
-  const cap = parseInt(prompt('Magazine capacity:', String(w.magazineCapacity)) ?? '', 10);
-  const cat = prompt(`Ammo category ref (e.g. ${Object.keys(AMMO_CATEGORIES).join(', ')}):`, w.ammoCategory || '');
-  const mount = prompt('Mount (carried or a vehicle name):', w.mount);
-  const modesStr = prompt(
-    'Firing modes as MODE:rounds, comma-separated (e.g. SA:1, BF:3, FA:6). Leave blank for none:',
-    w.firingModes.map((m) => `${m.mode}:${m.rounds}`).join(', '));
-  const notes = prompt('Notes:', w.notes);
+  const cap = parseInt(prompt(t('magazineCapacityPrompt'), String(w.magazineCapacity)) ?? '', 10);
+  const cat = prompt(t('ammoCategoryPrompt', Object.keys(AMMO_CATEGORIES).join(', ')), w.ammoCategory || '');
+  const mount = prompt(t('mountPrompt'), w.mount);
+  const modesStr = prompt(t('firingModesPrompt'), w.firingModes.map((m) => `${m.mode}:${m.rounds}`).join(', '));
+  const notes = prompt(t('notesPrompt'), w.notes);
   const changes = {
     name,
     magazineCapacity: Number.isInteger(cap) ? cap : w.magazineCapacity,
@@ -160,21 +167,21 @@ function reserveSection(c) {
   // muted row label — the reverse emphasis from the weapon cards.
   const wrap = el('div', { class: 'group' });
   wrap.append(el('div', { class: 'section-title' }, [
-    el('h2', {}, 'Reserve ammo'),
-    el('button', { onclick: () => openAddPoolModal(c) }, '+ Pool'),
+    el('h2', {}, t('reserveAmmo')),
+    el('button', { onclick: () => openAddPoolModal(c) }, t('addPool')),
   ]));
 
   if (c.reserves.length === 0) {
-    wrap.append(el('div', { class: 'muted' }, 'No spare ammo tracked.'));
+    wrap.append(el('div', { class: 'muted' }, t('noSpareAmmo')));
   } else {
     // Group by category.
     const byCat = {};
     for (const r of c.reserves) (byCat[r.ammoCategory] ||= []).push(r);
     for (const [cat, pools] of Object.entries(byCat)) {
-      wrap.append(el('div', { class: 'subgroup-title' }, categoryName(cat)));
+      wrap.append(el('div', { class: 'subgroup-title' }, catName(cat)));
       for (const r of pools) {
         wrap.append(el('div', { class: 'row spread' }, [
-          el('span', { class: 'muted' }, typeName(r.ammoType)),
+          el('span', { class: 'muted' }, typeNameL(r.ammoType)),
           el('div', { class: 'row' }, [
             el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count - 1)) }, '−'),
             el('span', { class: 'count' }, String(r.count)),
@@ -193,18 +200,18 @@ function reserveSection(c) {
 // Selecting an existing (category, type) shows a live merge hint; Add calls
 // addReserve, which merges into the existing pool.
 function openAddPoolModal(c) {
-  const catSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
-    el('option', { value: ref }, name)));
+  const catSel = el('select', {}, Object.keys(AMMO_CATEGORIES).map((ref) =>
+    el('option', { value: ref }, catName(ref))));
   const typeSel = el('select', {}, AMMO_TYPES.map((code) =>
-    el('option', { value: code }, typeName(code))));
-  const amount = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'Amount', value: '' });
+    el('option', { value: code }, typeNameL(code))));
+  const amount = el('input', { type: 'text', inputmode: 'numeric', placeholder: t('amount'), value: '' });
   const hint = el('div', { class: 'hint' }, '');
 
   const updateHint = () => {
     const existing = c.reserves.find((r) => r.ammoCategory === catSel.value && r.ammoType === typeSel.value);
     if (existing) {
       const add = parseInt(amount.value, 10) || 0;
-      hint.textContent = `Will merge into ${categoryName(catSel.value)} / ${typeName(typeSel.value)}: ${existing.count} → ${existing.count + add}`;
+      hint.textContent = t('mergeHint', catName(catSel.value), typeNameL(typeSel.value), existing.count, existing.count + add);
     } else {
       hint.textContent = '';
     }
@@ -217,13 +224,13 @@ function openAddPoolModal(c) {
   });
   updateHint();
 
-  const close = openModal('Add ammo pool', [
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Weapon'), catSel]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Ammo type'), typeSel]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Amount'), amount]),
+  const close = openModal(t('addAmmoPool'), [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('weapon')), catSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('ammoType')), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('amount')), amount]),
     hint,
     el('div', { class: 'row spread' }, [
-      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', { onclick: () => close() }, t('cancel')),
       el('button', {
         class: 'accent',
         onclick: () => {
@@ -233,7 +240,7 @@ function openAddPoolModal(c) {
             ammoCategory: catSel.value, ammoType: typeSel.value, count,
           })));
         },
-      }, 'Add'),
+      }, t('add')),
     ]),
   ]);
 }
@@ -249,11 +256,11 @@ function droneNames(c) {
 
 // Modal to add a drone: just a name. Appended to the bottom of the Drones section.
 function openAddDroneModal(c) {
-  const nameInput = el('input', { type: 'text', placeholder: 'Drone name' });
-  const close = openModal('Add drone', [
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Name'), nameInput]),
+  const nameInput = el('input', { type: 'text', placeholder: t('droneNamePlaceholder') });
+  const close = openModal(t('addDroneTitle'), [
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('div', { class: 'row spread' }, [
-      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', { onclick: () => close() }, t('cancel')),
       el('button', {
         class: 'accent',
         onclick: () => {
@@ -262,7 +269,7 @@ function openAddDroneModal(c) {
           close();
           updateCharacter(c.id, (ch) => addDrone(ch, name));
         },
-      }, 'Add'),
+      }, t('add')),
     ]),
   ]);
 }
@@ -271,30 +278,62 @@ function openAddDroneModal(c) {
 // toggle buttons for available firing modes. `mount` ('carried' or a drone name)
 // is set by which "+ Weapon" button opened it.
 function openAddWeaponModal(c, mount) {
-  const nameInput = el('input', { type: 'text', placeholder: 'Weapon name' });
-  const typeSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
-    el('option', { value: ref }, name)));
+  const nameInput = el('input', { type: 'text', placeholder: t('weaponNamePlaceholder') });
+  const typeSel = el('select', {}, Object.keys(AMMO_CATEGORIES).map((ref) =>
+    el('option', { value: ref }, catName(ref))));
   const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
   capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
 
-  // Firing-mode toggle buttons.
+  // Firing-mode toggle buttons (tagged with their mode for catalog autofill).
   const selected = new Set();
   const modeButtons = STANDARD_FIRING_MODES.map((m) => {
-    const btn = el('button', { type: 'button', class: 'toggle' }, `${m.mode} (${m.rounds})`);
+    const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${m.mode} (${m.rounds})`);
     btn.addEventListener('click', () => {
       if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
       else { selected.add(m.mode); btn.classList.add('on'); }
     });
     return btn;
   });
+  const setMode = (mode, on) => {
+    const btn = modeButtons.find((b) => b.getAttribute('data-mode') === mode);
+    if (!btn) return;
+    if (on) { selected.add(mode); btn.classList.add('on'); } else { selected.delete(mode); btn.classList.remove('on'); }
+  };
 
-  const close = openModal('Add weapon', [
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Name'), nameInput]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Weapon type'), typeSel]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, 'Max ammo capacity'), capInput]),
-    el('div', { class: 'field' }, [el('span', { class: 'muted' }, 'Firing modes'), el('div', { class: 'modes' }, modeButtons)]),
+  const fields = [];
+
+  // Optional catalog picker: autocomplete weapon names -> autofill the fields.
+  const catalog = getCatalog();
+  if (catalog) {
+    const entries = catalogWeaponList(catalog, uiLang());
+    const byLabel = new Map(entries.map((e) => [e.label, e]));
+    const dl = el('datalist', { id: 'addweapon-catalog' }, entries.map((e) => el('option', { value: e.label })));
+    const finder = el('input', { type: 'text', placeholder: t('findWeapon'), list: 'addweapon-catalog', autocomplete: 'off' });
+    // 'input' fires immediately when an option is chosen from the datalist (and
+    // on each keystroke); we autofill as soon as the value matches a catalog name.
+    finder.addEventListener('input', () => {
+      const e = byLabel.get(finder.value);
+      if (!e) return;
+      nameInput.value = e.label;
+      capInput.value = String(e.magazineCapacity ?? '');
+      if (e.ammoCategory) {
+        if (![...typeSel.options].some((o) => o.value === e.ammoCategory)) {
+          typeSel.append(el('option', { value: e.ammoCategory }, catName(e.ammoCategory)));
+        }
+        typeSel.value = e.ammoCategory;
+      }
+      for (const m of STANDARD_FIRING_MODES) setMode(m.mode, (e.firingModes || []).includes(m.mode));
+    });
+    fields.push(el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('findWeapon')), finder]), dl);
+  }
+
+  fields.push(
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('weaponType')), typeSel]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('maxAmmoCapacity')), capInput]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('firingModes')), el('div', { class: 'modes' }, modeButtons)]),
     el('div', { class: 'row spread' }, [
-      el('button', { onclick: () => close() }, 'Cancel'),
+      el('button', { onclick: () => close() }, t('cancel')),
       el('button', {
         class: 'accent',
         onclick: () => {
@@ -308,9 +347,11 @@ function openAddWeaponModal(c, mount) {
           close();
           updateCharacter(c.id, (ch) => addWeapon(ch, weapon));
         },
-      }, 'Add'),
+      }, t('add')),
     ]),
-  ]);
+  );
+
+  const close = openModal(t('addWeaponTitle'), fields);
 }
 
 function weaponList(c, weapons, stashable) {
@@ -321,7 +362,7 @@ function weaponList(c, weapons, stashable) {
 
 export function renderSheet(container, characterId) {
   const c = getState().characters.find((x) => x.id === characterId);
-  if (!c) { container.append(el('div', { class: 'empty' }, 'Character not found.')); return; }
+  if (!c) { container.append(el('div', { class: 'empty' }, t('characterNotFound'))); return; }
 
   // Runner weapons (personally carried) vs drone-mounted weapons.
   const runner = c.weapons.filter((w) => w.mount === 'carried');
@@ -332,40 +373,40 @@ export function renderSheet(container, characterId) {
   // Runner section: <name> with Carrying / Stashed sub-headers.
   container.append(el('div', { class: 'group' }, [
     el('div', { class: 'section-title' }, [
-      el('h2', {}, 'Weapons'),
-      el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, '+ Weapon'),
+      el('h2', {}, t('weapons')),
+      el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, t('addWeapon')),
     ]),
-    el('div', { class: 'subgroup-title' }, 'Equipped'),
-    carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, 'Nothing equipped.'),
-    el('div', { class: 'subgroup-title' }, 'Unequipped'),
-    stashed.length ? weaponList(c, stashed, true) : el('div', { class: 'muted' }, 'Nothing unequipped.'),
+    el('div', { class: 'subgroup-title' }, t('equipped')),
+    carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, t('nothingEquipped')),
+    el('div', { class: 'subgroup-title' }, t('unequipped')),
+    stashed.length ? weaponList(c, stashed, true) : el('div', { class: 'muted' }, t('nothingUnequipped')),
   ]));
 
   // Drones section: + Drone button; a sub-header per drone with a delete control.
   const droneChildren = [el('div', { class: 'section-title' }, [
-    el('h2', {}, 'Drones'),
-    el('button', { onclick: () => openAddDroneModal(c) }, '+ Drone'),
+    el('h2', {}, t('drones')),
+    el('button', { onclick: () => openAddDroneModal(c) }, t('addDrone')),
   ])];
   if (droneList.length === 0) {
-    droneChildren.push(el('div', { class: 'muted' }, 'No drones. Add one to mount weapons on it.'));
+    droneChildren.push(el('div', { class: 'muted' }, t('noDrones')));
   } else {
     for (const name of droneList) {
       const weapons = c.weapons.filter((w) => w.mount === name);
       droneChildren.push(el('div', { class: 'row spread' }, [
         el('span', { class: 'subgroup-title' }, name),
         el('div', { class: 'row' }, [
-          el('button', { onclick: () => openAddWeaponModal(c, name) }, '+ Weapon'),
+          el('button', { onclick: () => openAddWeaponModal(c, name) }, t('addWeapon')),
           el('button', {
-            class: 'icon danger', title: 'Delete drone',
+            class: 'icon danger', title: t('deleteDrone'),
             onclick: () => {
-              if (confirm(`Delete drone "${name}"${weapons.length ? ` and its ${weapons.length} weapon(s)` : ''}?`)) {
+              if (confirm(t('deleteDroneConfirm', name, weapons.length))) {
                 updateCharacter(c.id, (ch) => removeDrone(ch, name));
               }
             },
           }, '🗑'),
         ]),
       ]));
-      droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, 'No weapons.'));
+      droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, t('noWeapons')));
     }
   }
   container.append(el('div', { class: 'group' }, droneChildren));
