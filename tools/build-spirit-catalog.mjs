@@ -26,8 +26,9 @@ if (!existsSync(SRC)) {
 const source = JSON.parse(readFileSync(SRC, 'utf8'));
 
 // Localized spirit type-names from Genesis i18n (spirit.<id>=Name). Base file =
-// English (utf8); *_de = German (latin1). Best-effort: the catalog still builds
-// from the source's own nameEn/nameDe when the jar is absent.
+// English (utf8); *_de = German (latin1). Used only as a FALLBACK — the authored
+// source's nameEn/nameDe win (Genesis stores plural type names like "Erdgeister";
+// the source uses the singular "Erdgeist" shown in the UI).
 const namesEn = {}; const namesDe = {};
 if (existsSync(JAR)) {
   const tmp = mkdtempSync(join(tmpdir(), 'sr6spirit-'));
@@ -59,7 +60,7 @@ for (const [id, s] of Object.entries(source.spirits || {})) {
   }
   spirits[id] = {
     id,
-    name: { en: namesEn[id] || s.nameEn || id, de: namesDe[id] || s.nameDe || null },
+    name: { en: s.nameEn || namesEn[id] || id, de: s.nameDe || namesDe[id] || null },
     attributes: s.attributes,
     conditionMonitor: s.conditionMonitor,
     initiative: s.initiative ?? null,
