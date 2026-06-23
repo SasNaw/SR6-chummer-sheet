@@ -1,56 +1,116 @@
+/* SR6 Ammo Tracker — a smartgun-HUD identity: amber monospace readouts on a
+   near-black terminal, hairline structure, AR-cyan focus. The live ammo count is
+   the hero of every card. */
 :root {
-  --bg: #0b0e14; --panel: #151a23; --panel-2: #1d2430; --text: #e6e9ef;
-  --muted: #8b95a7; --accent: #f0b429; --danger: #e5484d; --ok: #46a758;
-  --radius: 12px;
+  --bg: #0a0d12;
+  --panel: #121722;
+  --panel-2: #1a2030;
+  --line: #243044;
+  --text: #e8ecf3;
+  --muted: #7e8aa0;
+  --accent: #ffb000;       /* smartgun amber — the readout colour */
+  --accent-ink: #160f00;   /* text on amber */
+  --danger: #ff5a5f;
+  --focus: #34e1c8;        /* AR cyan — keyboard focus ring */
+  --radius: 10px;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+
 * { box-sizing: border-box; }
+
 body {
-  margin: 0; font-family: system-ui, -apple-system, sans-serif;
-  background: var(--bg); color: var(--text);
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Sticky terminal header */
 #app-header {
-  position: sticky; top: 0; z-index: 5; background: var(--panel);
-  padding: 12px 16px calc(12px); display: flex; gap: 8px; align-items: center;
-  border-bottom: 1px solid #000;
+  position: sticky; top: 0; z-index: 5;
+  background: var(--panel);
+  padding: 12px 16px;
+  display: flex; gap: 8px; align-items: center;
+  border-bottom: 1px solid var(--line);
 }
-#app-header h1 { font-size: 18px; margin: 0; flex: 1; }
-#app-root { padding: 16px; max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
+#app-header h1 { font-size: 17px; margin: 0; flex: 1; font-weight: 600; letter-spacing: 0.02em; }
+
+#app-root { padding: 16px; max-width: 720px; margin: 0 auto; display: grid; gap: 18px; }
+
+/* Controls */
 button {
   font: inherit; color: var(--text); background: var(--panel-2);
-  border: 1px solid #2b3444; border-radius: var(--radius); padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px;
   min-height: 44px; cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, transform .04s ease;
 }
+button:hover { border-color: #3a4a64; }
 button:active { transform: translateY(1px); }
-button.accent { background: var(--accent); color: #1a1300; border-color: var(--accent); font-weight: 600; }
+button.accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.accent:hover { filter: brightness(1.06); }
 button.danger { color: var(--danger); }
 button.icon { min-width: 44px; padding: 10px; }
+
 input, select {
   font: inherit; color: var(--text); background: var(--panel-2);
-  border: 1px solid #2b3444; border-radius: 8px; padding: 10px; min-height: 44px; width: 100%;
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-height: 44px; width: 100%;
 }
-.card { background: var(--panel); border: 1px solid #232c3a; border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Surfaces */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .spread { justify-content: space-between; }
 .muted { color: var(--muted); font-size: 13px; }
-.badge { font-size: 12px; background: var(--panel-2); border: 1px solid #2b3444; border-radius: 999px; padding: 2px 10px; color: var(--muted); }
-.count { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.group { display: grid; gap: 10px; }
+
+/* HUD chip */
+.badge {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; color: var(--muted);
+}
+
+/* The hero: live ammo readout */
+.count { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
 .count .cap { color: var(--muted); font-size: 18px; font-weight: 400; }
+
 .modes { display: flex; gap: 8px; flex-wrap: wrap; }
+.modes button { font-family: var(--mono); font-size: 13px; letter-spacing: 0.03em; }
 .list { display: grid; gap: 10px; }
 .empty { text-align: center; color: var(--muted); padding: 32px 0; }
-h2 { font-size: 16px; margin: 0; }
-.section-title { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
-.section-title h2 { font-size: 20px; letter-spacing: 0.01em; }
-.group { display: grid; gap: 10px; }
-.subgroup-title { color: var(--text); opacity: 0.8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; }
+
+h2 { font-size: 16px; margin: 0; font-weight: 600; }
+
+/* Top-level section header with an amber marker */
+.section-title { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.section-title h2 { font-size: 18px; text-transform: uppercase; letter-spacing: 0.08em; }
+.section-title h2::before { content: ''; display: inline-block; width: 3px; height: 0.9em; background: var(--accent); margin-right: 9px; vertical-align: -1px; }
+
+/* Sub-header: mono console label */
+.subgroup-title { font-family: var(--mono); color: var(--muted); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 6px; }
+
 .card-foot { display: flex; justify-content: flex-end; }
-.toggle.on { background: var(--accent); color: #1a1300; border-color: var(--accent); font-weight: 600; }
-.ammo-empty { color: var(--danger); border-color: var(--danger); }
 .carried-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .carried-toggle input { width: auto; min-height: 0; }
-.hint { color: var(--accent); font-size: 13px; min-height: 18px; }
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
-.modal { background: var(--panel); border: 1px solid #232c3a; border-radius: var(--radius); padding: 20px; width: 100%; max-width: 420px; display: grid; gap: 14px; }
-.modal-title { font-size: 18px; font-weight: 600; }
+
+.toggle.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.ammo-empty { color: var(--danger); border-color: var(--danger); }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(3, 5, 9, 0.66); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+}
+.modal { background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--accent); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 420px; display: grid; gap: 14px; animation: modal-in .14s ease-out; }
+.modal-title { font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 .field { display: grid; gap: 6px; }
+.hint { color: var(--accent); font-size: 13px; min-height: 18px; }
+
+@keyframes modal-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
