@@ -3,7 +3,7 @@ import { t } from '../app.js';
 import {
   removeSpirit, updateSpirit, spiritAttributeValues, spiritConditionMonitor,
 } from '../model.js';
-import { localizedPair } from '../spirit-catalog.js';
+import { localizedPair, getSpiritCatalog } from '../spirit-catalog.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
 
 // Localized attribute labels, kept here (the only consumer) rather than as 20 i18n
@@ -22,7 +22,12 @@ function pairLine(label, list, lang) {
 
 export function spiritCard(c, spirit) {
   const lang = uiLang();
-  const typeLabel = localizedPair(spirit.typeName, lang) || spirit.type;
+  // Prefer the currently-loaded catalog's name for this type (so re-loading an
+  // updated catalog refreshes even previously-summoned spirits), falling back to
+  // the snapshot taken when the spirit was summoned.
+  const cat = getSpiritCatalog();
+  const liveName = cat && cat.spirits && cat.spirits[spirit.type] && cat.spirits[spirit.type].name;
+  const typeLabel = localizedPair(liveName || spirit.typeName, lang) || spirit.type;
   const meta = `${typeLabel}, ${t('force')}: ${spirit.force}`;
   const display = spirit.name ? `${spirit.name} (${meta})` : `${typeLabel} (${t('force')}: ${spirit.force})`;
   const card = el('div', { class: 'card' });
