@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReservePool, createWeapon, createCharacter } from '../js/model.js';
+import { createReservePool, createWeapon, createCharacter, weaponDisplayName } from '../js/model.js';
 
 test('createReservePool fills defaults', () => {
   assert.deepEqual(createReservePool({ ammoCategory: 'ammo_rifles', ammoType: 'regular', count: 5 }),
@@ -26,6 +26,18 @@ test('createWeapon honours an explicit id and loaded value', () => {
 test('createWeapon defaults stashed to false and honours an explicit value', () => {
   assert.equal(createWeapon({ name: 'X' }).stashed, false);
   assert.equal(createWeapon({ name: 'X', stashed: true }).stashed, true);
+});
+
+test('createWeapon defaults alias to empty and honours an explicit value', () => {
+  assert.equal(createWeapon({ name: 'X' }).alias, '');
+  assert.equal(createWeapon({ name: 'X', alias: 'Lucky' }).alias, 'Lucky');
+});
+
+test('weaponDisplayName shows the base name, or "Alias (Name)" when aliased', () => {
+  assert.equal(weaponDisplayName({ name: 'Ares Predator VI', alias: '' }), 'Ares Predator VI');
+  assert.equal(weaponDisplayName({ name: 'Ares Predator VI' }), 'Ares Predator VI'); // alias absent (legacy)
+  assert.equal(weaponDisplayName({ name: 'Ares Predator VI', alias: '  ' }), 'Ares Predator VI'); // blank ignored
+  assert.equal(weaponDisplayName({ name: 'Ares Predator VI', alias: 'Old Faithful' }), 'Old Faithful (Ares Predator VI)');
 });
 
 test('createCharacter builds an empty character', () => {

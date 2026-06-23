@@ -36,7 +36,14 @@ function reserveSection(c) {
             el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count - 1)) }, '−'),
             el('span', { class: 'count' }, String(r.count)),
             el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count + 1)) }, '+'),
-            el('button', { class: 'icon danger', onclick: () => updateCharacter(c.id, (ch) => removeReserve(ch, cat, r.ammoType)) }, '🗑'),
+            el('button', {
+              class: 'icon danger', title: t('remove'),
+              onclick: () => {
+                if (confirm(t('removeReserveConfirm', typeNameL(r.ammoType), catName(cat), r.count))) {
+                  updateCharacter(c.id, (ch) => removeReserve(ch, cat, r.ammoType));
+                }
+              },
+            }, '🗑'),
           ]),
         ]));
       }

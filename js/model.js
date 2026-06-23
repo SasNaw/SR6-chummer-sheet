@@ -7,17 +7,25 @@ export function createReservePool(props = {}) {
 
 export function createWeapon(props = {}) {
   const {
-    name = '', ref = '', mount = 'carried', magazineCapacity = 0,
+    name = '', alias = '', ref = '', mount = 'carried', magazineCapacity = 0,
     ammoCategory = null, firingModes = [], loaded, notes = '', stashed = false, id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
-    name, ref, mount, magazineCapacity, ammoCategory,
+    name, alias, ref, mount, magazineCapacity, ammoCategory,
     firingModes: firingModes.map((m) => ({ ...m })),
     loaded: loaded ? { ...loaded } : { ammoType: 'regular', count: 0 },
     notes,
     stashed,
   };
+}
+
+// The label shown for a weapon: the base name on its own, or, when the user has
+// set an alias, "Alias (Base Name)". `name` is the real/catalog weapon name;
+// `alias` is an optional user-chosen display name.
+export function weaponDisplayName(weapon) {
+  const alias = (weapon.alias || '').trim();
+  return alias ? `${alias} (${weapon.name})` : weapon.name;
 }
 
 export function createCharacter(props = {}) {
