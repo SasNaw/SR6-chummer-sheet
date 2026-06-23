@@ -3,7 +3,7 @@ import { getState, mutate, t, rerender } from '../app.js';
 import { importFromXmlString } from '../xml-import.js';
 import { serialize, deserialize, mergeState } from '../store.js';
 import { upsertCharacter } from '../model.js';
-import { setCatalog, clearCatalog, catalogCount, isWeaponCatalog } from '../catalog.js';
+import { getCatalog, setCatalog, clearCatalog, catalogCount, isWeaponCatalog } from '../catalog.js';
 
 function readFile(accept, cb) {
   const input = el('input', { type: 'file', accept });
@@ -34,7 +34,7 @@ export function renderIoBar(container, { onImported }) {
   const importXml = el('button', {
     onclick: () => readFile('.xml,text/xml', (text) => {
       try {
-        const character = importFromXmlString(text);
+        const character = importFromXmlString(text, getCatalog(), getState().lang || 'en');
         mutate((s) => ({ ...s, characters: upsertCharacter(s.characters, character), activeId: character.id }));
         onImported(character.id);
       } catch (e) {

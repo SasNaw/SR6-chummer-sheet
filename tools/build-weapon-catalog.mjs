@@ -37,13 +37,17 @@ const attr = (el, n) => (el.getAttribute ? el.getAttribute(n) : null);
 const els = (doc, tag) => Array.from(doc.getElementsByTagName(tag));
 const directChild = (el, tag) => Array.from(el.childNodes || []).find((n) => n.nodeName === tag);
 
-// 2. i18n names (item.<id>=Name). Base file = English; *_de / *_fr = translations.
+// 2. i18n names. Items are keyed item.<id>=Name; ammo types are keyed
+//    ammotype.<id>=Name. Base file = English; *_de / *_fr = translations.
 const names = {}; const namesDe = {}; const namesFr = {};
-function readProps(path, target, encoding) {
+const typeNames = {}; const typeNamesDe = {};
+function readProps(path, encoding, itemTarget, typeTarget) {
   const text = readFileSync(path, encoding);
   for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/^item\.([A-Za-z0-9_-]+)=(.*)$/);
-    if (m) target[m[1]] = m[2].trim();
+    let m = line.match(/^item\.([A-Za-z0-9_-]+)=(.*)$/);
+    if (m) { if (itemTarget) itemTarget[m[1]] = m[2].trim(); continue; }
+    m = line.match(/^ammotype\.([A-Za-z0-9_-]+)=(.*)$/);
+    if (m && typeTarget) typeTarget[m[1]] = m[2].trim();
   }
 }
 for (const book of books) {
@@ -52,15 +56,16 @@ for (const book of books) {
   for (const f of readdirSync(i18nDir)) {
     if (!f.endsWith('.properties') || f.includes('-help')) continue;
     const p = join(i18nDir, f);
-    if (f.includes('_de.')) readProps(p, namesDe, 'latin1');
-    else if (f.includes('_fr.')) readProps(p, namesFr, 'latin1');
-    else if (!/_[a-z]{2}\./.test(f)) readProps(p, names, 'utf8'); // base = English
+    if (f.includes('_de.')) readProps(p, 'latin1', namesDe, typeNamesDe);
+    else if (f.includes('_fr.')) readProps(p, 'latin1', namesFr, null);
+    else if (!/_[a-z]{2}\./.test(f)) readProps(p, 'utf8', names, typeNames); // base = English
   }
 }
 
 // 3. Ammo categories + subtype -> category map (from gear_ammunition.xml).
 const subtypeToCategory = {};
 const ammoCategoryIds = new Set();
+const categorySubtypes = {}; // category id -> Set of weapon subtypes it serves
 // 4. Ammo types (regular/apds/...) from ammunition_types.xml.
 const ammoTypeIds = new Set();
 
@@ -81,8 +86,10 @@ eachDataFile((f, path) => {
       const id = attr(item, 'id');
       if (!id) continue;
       ammoCategoryIds.add(id);
+      categorySubtypes[id] ||= new Set();
       for (const req of els(item, 'itemsubtypereq')) {
         for (const st of (attr(req, 'type') || '').split(',').map((s) => s.trim()).filter(Boolean)) {
+          categorySubtypes[id].add(st);
           if (!subtypeToCategory[st]) subtypeToCategory[st] = id;
         }
       }
@@ -129,10 +136,30 @@ eachDataFile((f, path, book) => {
   }
 });
 
+// Keep only ammunition for firearms / bows / crossbows. Explicit set of
+// conventional weapon subtypes; energy weapons (lasers/pulse), flamethrowers
+// (THROWERS), grenades, rockets, etc. are excluded. Laser/pulse/gas weapons share
+// the OTHER_SPECIAL subtype with dart guns, so their "battery"/"gas" ammo is
+// dropped by id.
+const ALLOWED_SUBTYPES = new Set([
+  'BOWS', 'CROSSBOWS',
+  'HOLDOUTS', 'PISTOLS_LIGHT', 'PISTOLS_HEAVY', 'MACHINE_PISTOLS', 'SUBMACHINE_GUNS',
+  'RIFLE_ASSAULT', 'RIFLE_HUNTING', 'RIFLE_SNIPER', 'SHOTGUNS',
+  'LMG', 'MMG', 'HMG', 'ASSAULT_CANNON', 'TASERS', 'OTHER_SPECIAL',
+]);
+const isProjectileAmmo = (id) => {
+  if (/battery|gas/i.test(id)) return false;
+  const reqs = categorySubtypes[id];
+  return reqs && [...reqs].some((st) => ALLOWED_SUBTYPES.has(st));
+};
+
 const ammoCategories = {};
-for (const id of [...ammoCategoryIds].sort()) ammoCategories[id] = { en: names[id] || id, de: namesDe[id] || null };
+for (const id of [...ammoCategoryIds].sort()) {
+  if (!isProjectileAmmo(id)) continue;
+  ammoCategories[id] = { en: names[id] || null, de: namesDe[id] || null };
+}
 const ammoTypes = {};
-for (const id of [...ammoTypeIds].sort()) ammoTypes[id] = { en: names[id] || id, de: namesDe[id] || null };
+for (const id of [...ammoTypeIds].sort()) ammoTypes[id] = { en: typeNames[id] || null, de: typeNamesDe[id] || null };
 
 mkdirSync('data-local', { recursive: true });
 const out = {

@@ -1,5 +1,9 @@
 import { prettifyRef } from './util.js';
 
+// Default round cost per firing mode, used to turn the catalog's mode list
+// (plain strings) into the model's { mode, rounds } shape on import.
+export const DEFAULT_MODE_ROUNDS = { SS: 1, SA: 1, BF: 3, FA: 6 };
+
 // ref -> { name, magazineCapacity, ammoCategory, firingModes }
 // Magazine sizes and firing-mode round costs are sensible defaults the user edits.
 export const WEAPONS_DB = {

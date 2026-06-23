@@ -16,13 +16,26 @@ export const STANDARD_FIRING_MODES = [
 
 export function uiLang() { return getState().lang || 'en'; }
 
-// Localized display names: English uses the built-in tables; German prefers the
-// loaded catalog's translations, falling back to English.
+// Localized display names: prefer the loaded catalog's name (in the current
+// language), falling back to the built-in tables when no catalog is loaded or
+// the id is unknown to it.
 export function catName(ref) {
-  return uiLang() === 'de' ? (catalogCategoryName(getCatalog(), ref, 'de') || categoryName(ref)) : categoryName(ref);
+  return catalogCategoryName(getCatalog(), ref, uiLang()) || categoryName(ref);
 }
 export function typeNameL(code) {
-  return uiLang() === 'de' ? (catalogTypeName(getCatalog(), code, 'de') || typeName(code)) : typeName(code);
+  return catalogTypeName(getCatalog(), code, uiLang()) || typeName(code);
+}
+
+// Option ids for the ammo category / type dropdowns come solely from the loaded
+// catalog — empty when no catalog is loaded (the catalog is the source of truth
+// for ammo). The built-in tables remain only as a display-name fallback.
+export function ammoCategoryIds() {
+  const cat = getCatalog();
+  return cat ? Object.keys(cat.ammoCategories || {}) : [];
+}
+export function ammoTypeIds() {
+  const cat = getCatalog();
+  return cat ? Object.keys(cat.ammoTypes || {}) : [];
 }
 
 // Apply a Character->Character transform to the active character.
