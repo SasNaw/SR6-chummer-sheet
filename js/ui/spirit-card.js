@@ -23,10 +23,11 @@ function pairLine(label, list, lang) {
 export function spiritCard(c, spirit) {
   const lang = uiLang();
   const typeLabel = localizedPair(spirit.typeName, lang) || spirit.type;
-  const display = spirit.name ? `${spirit.name} (${typeLabel})` : typeLabel;
+  const meta = `${typeLabel}, ${t('force')}: ${spirit.force}`;
+  const display = spirit.name ? `${spirit.name} (${meta})` : `${typeLabel} (${t('force')}: ${spirit.force})`;
   const card = el('div', { class: 'card' });
 
-  // Header: display name + rename / dismiss.
+  // Header: "Name (Type, Force: x)" + rename / dismiss.
   card.append(el('div', { class: 'row spread' }, [
     el('div', { class: 'row' }, [
       el('h2', {}, display),
@@ -38,8 +39,14 @@ export function spiritCard(c, spirit) {
     }, '🗑'),
   ]));
 
-  // Force headline (the condition monitor lives in the stat table below).
-  card.append(el('div', { class: 'count' }, [String(spirit.force), el('span', { class: 'cap' }, ` ${t('force')}`)]));
+  // Services — the card's hero readout: label sits right beside the counter.
+  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
+  card.append(el('div', { class: 'row spirit-services' }, [
+    el('span', { class: 'services-label' }, t('services')),
+    el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
+    el('span', { class: 'count' }, String(spirit.services)),
+    el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+  ]));
 
   // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
   // the last row carries Magic, Essence, and the condition monitor, evenly split
@@ -47,8 +54,8 @@ export function spiritCard(c, spirit) {
   const labels = ATTR_LABELS[lang] || ATTR_LABELS.en;
   const v = spiritAttributeValues(spirit);
   const cell = (label, val) => el('div', { class: 'stat' }, [
-    el('div', { class: 'stat-label' }, label),
-    el('div', { class: 'stat-val' }, String(val ?? '–')),
+    el('span', { class: 'stat-label' }, `${label}: `),
+    el('span', { class: 'stat-val' }, String(val ?? '–')),
   ]);
   card.append(el('div', { class: 'spirit-stats' }, [
     cell(labels.body, v.body), cell(labels.agility, v.agility), cell(labels.reaction, v.reaction), cell(labels.strength, v.strength),
@@ -74,17 +81,6 @@ export function spiritCard(c, spirit) {
     pairLine(t('skillsLabel'), spirit.skills, lang),
     pairLine(t('weaknessesLabel'), spirit.weaknesses, lang),
   ]) { if (line) card.append(line); }
-
-  // Services counter.
-  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
-  card.append(el('div', { class: 'row spread' }, [
-    el('span', { class: 'muted' }, t('services')),
-    el('div', { class: 'row' }, [
-      el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
-      el('span', { class: 'count' }, String(spirit.services)),
-      el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
-    ]),
-  ]));
 
   return card;
 }

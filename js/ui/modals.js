@@ -19,6 +19,21 @@ function typeOptions() {
     .map((code) => el('option', { value: code }, typeNameL(code)));
 }
 
+// Inline −/value/+ stepper — a mobile-friendly numeric input (big tap targets
+// instead of the tiny native <input type=number> spinners). Returns the node and
+// a getter; calls onChange(value) after each step.
+function stepper(initial, { min = 0, onChange } = {}) {
+  let v = initial;
+  const val = el('span', { class: 'stepper-val' }, String(v));
+  const step = (d) => { v = Math.max(min, v + d); val.textContent = String(v); if (onChange) onChange(v); };
+  const node = el('span', { class: 'stepper' }, [
+    el('button', { type: 'button', class: 'icon', onclick: () => step(-1) }, '−'),
+    val,
+    el('button', { type: 'button', class: 'icon', onclick: () => step(1) }, '+'),
+  ]);
+  return { node, get: () => v };
+}
+
 // Modal to add a pool: weapon + ammo-type dropdowns and a numbers-only amount.
 // Selecting an existing (category, type) shows a live merge hint; Add calls
 // addReserve, which merges into the existing pool.
@@ -180,14 +195,14 @@ export function openAddSpiritModal(c) {
 
   const nameInput = el('input', { type: 'text', placeholder: t('spiritNamePlaceholder') });
   const typeSel = el('select', {}, spirits.map((s) => el('option', { value: s.id }, s.label)));
-  const forceInput = el('input', { type: 'number', min: '1', step: '1', value: '3' });
-  const servicesInput = el('input', { type: 'number', min: '0', step: '1', value: '1' });
+  const forceStepper = stepper(3, { min: 1, onChange: () => rebuildOptional() });
+  const servicesStepper = stepper(1, { min: 0 });
   const optBox = el('div', { class: 'opt-powers' });
   const countLabel = el('div', { class: 'muted' }, '');
 
   const selected = new Set(); // keyed by an optional power's English name
   const spiritOf = (id) => (spirits.find((s) => s.id === id) || {}).spirit;
-  const force = () => parseInt(forceInput.value, 10) || 0;
+  const force = () => forceStepper.get();
 
   function rebuildOptional() {
     const sp = spiritOf(typeSel.value);
@@ -207,14 +222,13 @@ export function openAddSpiritModal(c) {
     countLabel.textContent = t('optionalPowersCount', selected.size, cap);
   }
   typeSel.addEventListener('change', () => { selected.clear(); rebuildOptional(); });
-  forceInput.addEventListener('input', rebuildOptional);
   rebuildOptional();
 
   const close = openModal(t('addSpiritTitle'), [
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('spiritType')), typeSel]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('force')), forceInput]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('services')), servicesInput]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('force')), forceStepper.node]),
+    el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('services')), servicesStepper.node]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('optionalPowersLabel')), optBox, countLabel]),
     el('div', { class: 'row spread' }, [
       el('button', { onclick: () => close() }, t('cancel')),
@@ -225,7 +239,7 @@ export function openAddSpiritModal(c) {
           if (!sp) return;
           const spirit = createSpirit({
             name: nameInput.value.trim(), type: sp.id, typeName: sp.name, force: Math.max(1, force()),
-            services: Math.max(0, parseInt(servicesInput.value, 10) || 0),
+            services: servicesStepper.get(),
             attributes: sp.attributes, conditionMonitor: sp.conditionMonitor,
             initiative: sp.initiative, astralInitiative: sp.astralInitiative,
             actions: sp.actions, movement: sp.movement,
