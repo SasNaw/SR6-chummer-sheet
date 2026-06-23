@@ -130,9 +130,9 @@ eachDataFile((f, path, book) => {
 });
 
 const ammoCategories = {};
-for (const id of [...ammoCategoryIds].sort()) ammoCategories[id] = names[id] || id;
+for (const id of [...ammoCategoryIds].sort()) ammoCategories[id] = { en: names[id] || id, de: namesDe[id] || null };
 const ammoTypes = {};
-for (const id of [...ammoTypeIds].sort()) ammoTypes[id] = names[id] || id;
+for (const id of [...ammoTypeIds].sort()) ammoTypes[id] = { en: names[id] || id, de: namesDe[id] || null };
 
 mkdirSync('data-local', { recursive: true });
 const out = {

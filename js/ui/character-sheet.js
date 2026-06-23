@@ -6,6 +6,7 @@ import {
   createWeapon, createReservePool, upsertCharacter, addDrone, removeDrone,
 } from '../model.js';
 import { AMMO_CATEGORIES, AMMO_TYPES, categoryName, typeName } from '../ammo-db.js';
+import { getCatalog, catalogCategoryName, catalogTypeName, catalogWeaponList } from '../catalog.js';
 
 // Standard SR6 firing modes offered when creating a weapon (round cost per mode;
 // editable later via the weapon's edit dialog).
@@ -15,6 +16,16 @@ const STANDARD_FIRING_MODES = [
   { mode: 'BF', rounds: 3 },
   { mode: 'FA', rounds: 6 },
 ];
+
+// Localized display names: English uses our built-in tables; German prefers the
+// loaded catalog's translations, falling back to English.
+function uiLang() { return getState().lang || 'en'; }
+function catName(ref) {
+  return uiLang() === 'de' ? (catalogCategoryName(getCatalog(), ref, 'de') || categoryName(ref)) : categoryName(ref);
+}
+function typeNameL(code) {
+  return uiLang() === 'de' ? (catalogTypeName(getCatalog(), code, 'de') || typeName(code)) : typeName(code);
+}
 
 // Apply a Character->Character transform to the active character.
 function updateCharacter(characterId, fn) {
@@ -102,7 +113,7 @@ function ammoSwitcher(c, w) {
       if (sel.value !== w.loaded.ammoType) updateCharacter(c.id, (ch) => reload(ch, w.id, sel.value));
     },
   }, types.map((t) => el('option', { value: t },
-    `${typeName(t)} (${countByType[t] ?? 0})`))); // missing pool reads as 0
+    `${typeNameL(t)} (${countByType[t] ?? 0})`))); // missing pool reads as 0
   sel.value = w.loaded.ammoType;
   sel.style.width = 'auto';
   return sel;
@@ -116,11 +127,11 @@ function ammoSwitcher(c, w) {
 function doReload(c, w) {
   const pools = matchingReserves(c, w.id);
   if (pools.length === 0) {
-    alert(t('noReserveForCategory', categoryName(w.ammoCategory)));
+    alert(t('noReserveForCategory', catName(w.ammoCategory)));
     return;
   }
   if (!pools.some((p) => p.ammoType === w.loaded.ammoType)) {
-    alert(t('noTypeInReserve', typeName(w.loaded.ammoType)));
+    alert(t('noTypeInReserve', typeNameL(w.loaded.ammoType)));
     return;
   }
   updateCharacter(c.id, (ch) => reload(ch, w.id, w.loaded.ammoType));
@@ -167,10 +178,10 @@ function reserveSection(c) {
     const byCat = {};
     for (const r of c.reserves) (byCat[r.ammoCategory] ||= []).push(r);
     for (const [cat, pools] of Object.entries(byCat)) {
-      wrap.append(el('div', { class: 'subgroup-title' }, categoryName(cat)));
+      wrap.append(el('div', { class: 'subgroup-title' }, catName(cat)));
       for (const r of pools) {
         wrap.append(el('div', { class: 'row spread' }, [
-          el('span', { class: 'muted' }, typeName(r.ammoType)),
+          el('span', { class: 'muted' }, typeNameL(r.ammoType)),
           el('div', { class: 'row' }, [
             el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => setReserveCount(ch, cat, r.ammoType, r.count - 1)) }, '−'),
             el('span', { class: 'count' }, String(r.count)),
@@ -189,10 +200,10 @@ function reserveSection(c) {
 // Selecting an existing (category, type) shows a live merge hint; Add calls
 // addReserve, which merges into the existing pool.
 function openAddPoolModal(c) {
-  const catSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
-    el('option', { value: ref }, name)));
+  const catSel = el('select', {}, Object.keys(AMMO_CATEGORIES).map((ref) =>
+    el('option', { value: ref }, catName(ref))));
   const typeSel = el('select', {}, AMMO_TYPES.map((code) =>
-    el('option', { value: code }, typeName(code))));
+    el('option', { value: code }, typeNameL(code))));
   const amount = el('input', { type: 'text', inputmode: 'numeric', placeholder: t('amount'), value: '' });
   const hint = el('div', { class: 'hint' }, '');
 
@@ -200,7 +211,7 @@ function openAddPoolModal(c) {
     const existing = c.reserves.find((r) => r.ammoCategory === catSel.value && r.ammoType === typeSel.value);
     if (existing) {
       const add = parseInt(amount.value, 10) || 0;
-      hint.textContent = t('mergeHint', categoryName(catSel.value), typeName(typeSel.value), existing.count, existing.count + add);
+      hint.textContent = t('mergeHint', catName(catSel.value), typeNameL(typeSel.value), existing.count, existing.count + add);
     } else {
       hint.textContent = '';
     }
@@ -268,23 +279,55 @@ function openAddDroneModal(c) {
 // is set by which "+ Weapon" button opened it.
 function openAddWeaponModal(c, mount) {
   const nameInput = el('input', { type: 'text', placeholder: t('weaponNamePlaceholder') });
-  const typeSel = el('select', {}, Object.entries(AMMO_CATEGORIES).map(([ref, name]) =>
-    el('option', { value: ref }, name)));
+  const typeSel = el('select', {}, Object.keys(AMMO_CATEGORIES).map((ref) =>
+    el('option', { value: ref }, catName(ref))));
   const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
   capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
 
-  // Firing-mode toggle buttons.
+  // Firing-mode toggle buttons (tagged with their mode for catalog autofill).
   const selected = new Set();
   const modeButtons = STANDARD_FIRING_MODES.map((m) => {
-    const btn = el('button', { type: 'button', class: 'toggle' }, `${m.mode} (${m.rounds})`);
+    const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${m.mode} (${m.rounds})`);
     btn.addEventListener('click', () => {
       if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
       else { selected.add(m.mode); btn.classList.add('on'); }
     });
     return btn;
   });
+  const setMode = (mode, on) => {
+    const btn = modeButtons.find((b) => b.getAttribute('data-mode') === mode);
+    if (!btn) return;
+    if (on) { selected.add(mode); btn.classList.add('on'); } else { selected.delete(mode); btn.classList.remove('on'); }
+  };
 
-  const close = openModal(t('addWeaponTitle'), [
+  const fields = [];
+
+  // Optional catalog picker: autocomplete weapon names -> autofill the fields.
+  const catalog = getCatalog();
+  if (catalog) {
+    const entries = catalogWeaponList(catalog, uiLang());
+    const byLabel = new Map(entries.map((e) => [e.label, e]));
+    const dl = el('datalist', { id: 'addweapon-catalog' }, entries.map((e) => el('option', { value: e.label })));
+    const finder = el('input', { type: 'text', placeholder: t('findWeapon'), list: 'addweapon-catalog', autocomplete: 'off' });
+    // 'input' fires immediately when an option is chosen from the datalist (and
+    // on each keystroke); we autofill as soon as the value matches a catalog name.
+    finder.addEventListener('input', () => {
+      const e = byLabel.get(finder.value);
+      if (!e) return;
+      nameInput.value = e.label;
+      capInput.value = String(e.magazineCapacity ?? '');
+      if (e.ammoCategory) {
+        if (![...typeSel.options].some((o) => o.value === e.ammoCategory)) {
+          typeSel.append(el('option', { value: e.ammoCategory }, catName(e.ammoCategory)));
+        }
+        typeSel.value = e.ammoCategory;
+      }
+      for (const m of STANDARD_FIRING_MODES) setMode(m.mode, (e.firingModes || []).includes(m.mode));
+    });
+    fields.push(el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('findWeapon')), finder]), dl);
+  }
+
+  fields.push(
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('weaponType')), typeSel]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('maxAmmoCapacity')), capInput]),
@@ -306,7 +349,9 @@ function openAddWeaponModal(c, mount) {
         },
       }, t('add')),
     ]),
-  ]);
+  );
+
+  const close = openModal(t('addWeaponTitle'), fields);
 }
 
 function weaponList(c, weapons, stashable) {

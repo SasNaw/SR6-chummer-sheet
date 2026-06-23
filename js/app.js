@@ -12,6 +12,7 @@ export function getState() { return state; }
 export function mutate(fn) { state = fn(state); saveState(state); render(); }
 // Translate a key in the current language (used throughout the UI).
 export function t(key, ...params) { return translate(state.lang || 'en', key, ...params); }
+export function rerender() { render(); }
 export function goPicker() { view = { name: 'picker', characterId: null }; render(); }
 export function goSheet(characterId) { view = { name: 'sheet', characterId }; render(); }
 

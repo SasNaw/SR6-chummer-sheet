@@ -79,6 +79,15 @@ export const STRINGS = {
     // Shared modal buttons
     cancel: 'Cancel',
     add: 'Add',
+    // Weapon catalog
+    loadCatalog: 'Load weapon catalog',
+    clearCatalog: 'Clear catalog',
+    catalogStatus: (n) => `Weapon catalog: ${n} weapons`,
+    noCatalog: 'No weapon catalog loaded',
+    catalogLoaded: (n) => `Loaded ${n} weapons.`,
+    catalogInvalid: 'That file is not a weapon catalog.',
+    clearCatalogConfirm: 'Clear the loaded weapon catalog?',
+    findWeapon: 'Find weapon (catalog)',
   },
   de: {
     language: 'Sprache',
@@ -145,6 +154,14 @@ export const STRINGS = {
     firingModes: 'Feuermodi',
     cancel: 'Abbrechen',
     add: 'Hinzufügen',
+    loadCatalog: 'Waffenkatalog laden',
+    clearCatalog: 'Katalog löschen',
+    catalogStatus: (n) => `Waffenkatalog: ${n} Waffen`,
+    noCatalog: 'Kein Waffenkatalog geladen',
+    catalogLoaded: (n) => `${n} Waffen geladen.`,
+    catalogInvalid: 'Diese Datei ist kein Waffenkatalog.',
+    clearCatalogConfirm: 'Geladenen Waffenkatalog löschen?',
+    findWeapon: 'Waffe suchen (Katalog)',
   },
 };
 

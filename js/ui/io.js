@@ -1,8 +1,9 @@
 import { el } from './dom.js';
-import { getState, mutate, t } from '../app.js';
+import { getState, mutate, t, rerender } from '../app.js';
 import { importFromXmlString } from '../xml-import.js';
 import { serialize, deserialize, mergeState } from '../store.js';
 import { upsertCharacter } from '../model.js';
+import { setCatalog, clearCatalog, catalogCount, isWeaponCatalog } from '../catalog.js';
 
 function readFile(accept, cb) {
   const input = el('input', { type: 'file', accept });
@@ -59,4 +60,22 @@ export function renderIoBar(container, { onImported }) {
   }, t('importJson'));
 
   container.append(el('div', { class: 'card row' }, [importXml, exportJson, importJson]));
+
+  // Weapon catalog (on-device, optional): load a locally-generated catalog file.
+  const count = catalogCount();
+  const status = el('span', { class: 'muted' }, count ? t('catalogStatus', count) : t('noCatalog'));
+  const loadCat = el('button', {
+    onclick: () => readFile('.json,application/json', (text) => {
+      let obj;
+      try { obj = JSON.parse(text); } catch { obj = null; }
+      if (!isWeaponCatalog(obj)) { alert(t('catalogInvalid')); return; }
+      setCatalog(obj);
+      alert(t('catalogLoaded', Object.keys(obj.weapons).length));
+      rerender();
+    }),
+  }, t('loadCatalog'));
+  const clearCat = count
+    ? el('button', { class: 'danger', onclick: () => { if (confirm(t('clearCatalogConfirm'))) { clearCatalog(); rerender(); } } }, t('clearCatalog'))
+    : null;
+  container.append(el('div', { class: 'card row' }, [status, loadCat, clearCat].filter(Boolean)));
 }
