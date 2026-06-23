@@ -18,6 +18,25 @@ test('S4T0: character identity', () => {
   assert.equal(c.realName, 'Kenji "Ken" Sato');
 });
 
+function parse(xml) {
+  return parseSr6CharDoc(new DOMParser().parseFromString(xml, 'text/xml'));
+}
+
+test('detects magic from the root sr6char magic attribute', () => {
+  // S4T0 is mundane (magic="mundane" in the root element).
+  assert.equal(parseSr6CharDoc(load('S4T0.xml')).magic, false);
+  // A magician/adept/etc. is magical.
+  assert.equal(parse('<sr6char magic="magician"><name>Panda</name></sr6char>').magic, true);
+  assert.equal(parse('<sr6char magic="adept"><name>A</name></sr6char>').magic, true);
+  assert.equal(parse('<sr6char magic="mundane"><name>M</name></sr6char>').magic, false);
+});
+
+test('falls back to the MAGIC attribute value when the root has no magic attr', () => {
+  assert.equal(parse('<sr6char><name>X</name><attributes><attribute id="MAGIC" value="6"/></attributes></sr6char>').magic, true);
+  assert.equal(parse('<sr6char><name>X</name><attributes><attribute id="MAGIC" value="0"/></attributes></sr6char>').magic, false);
+  assert.equal(parse('<sr6char><name>X</name></sr6char>').magic, false);
+});
+
 test('S4T0: a catalog overrides the built-in weapon defs on import', () => {
   const catalog = {
     weapons: {

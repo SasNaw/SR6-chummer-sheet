@@ -90,6 +90,18 @@ function defaultAmmoType(reserves, ammoCategory) {
   return m ? m.ammoType : 'regular';
 }
 
+// A character is magical when the root <sr6char magic="..."> is anything other
+// than "mundane" (e.g. magician/adept/mystic_adept/aspected). As a fallback for
+// docs missing that attribute, a MAGIC attribute value > 0 also counts.
+function detectMagic(doc) {
+  const root = doc.getElementsByTagName('sr6char')[0];
+  const m = ((root && attr(root, 'magic')) || '').trim().toLowerCase();
+  if (m) return m !== 'mundane';
+  const magicAttr = Array.from(doc.getElementsByTagName('attribute'))
+    .find((a) => attr(a, 'id') === 'MAGIC');
+  return magicAttr ? parseInt(attr(magicAttr, 'value') || '0', 10) > 0 : false;
+}
+
 export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
   const items = Array.from(doc.getElementsByTagName('item'));
   const idx = indexItems(items);
@@ -122,6 +134,7 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
   return createCharacter({
     name: firstText(doc, 'name'),
     realName: firstText(doc, 'realname'),
+    magic: detectMagic(doc),
     weapons,
     reserves,
   });

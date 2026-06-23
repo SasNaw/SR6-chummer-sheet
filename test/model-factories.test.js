@@ -48,3 +48,8 @@ test('createCharacter builds an empty character', () => {
   assert.deepEqual(c.reserves, []);
   assert.deepEqual(c.drones, []);
 });
+
+test('createCharacter defaults magic to false and honours an explicit value', () => {
+  assert.equal(createCharacter({ name: 'S4T0' }).magic, false);
+  assert.equal(createCharacter({ name: 'Panda', magic: true }).magic, true);
+});

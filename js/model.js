@@ -29,10 +29,10 @@ export function weaponDisplayName(weapon) {
 }
 
 export function createCharacter(props = {}) {
-  const { name = '', realName = '', weapons = [], reserves = [], drones = [], id } = props;
+  const { name = '', realName = '', weapons = [], reserves = [], drones = [], magic = false, id } = props;
   return {
     id: id !== undefined ? id : newId(),
-    name, realName,
+    name, realName, magic,
     weapons: weapons.map((w) => ({ ...w })),
     reserves: reserves.map((r) => ({ ...r })),
     drones: [...drones],

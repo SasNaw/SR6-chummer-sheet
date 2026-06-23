@@ -22,8 +22,10 @@ export const STRINGS = {
     importFailed: (msg) => `Import failed: ${msg}`,
     noCharactersInFile: 'No characters found in that file — nothing imported.',
     importedCount: (n) => `Imported ${n} character(s).`,
-    // Weapons section
+    // Section tabs
     weapons: 'Weapons',
+    magic: 'Magic',
+    magicSection: 'Magic section',
     addWeapon: '+ Weapon',
     equipped: 'Equipped',
     unequipped: 'Unequipped',
@@ -104,6 +106,8 @@ export const STRINGS = {
     noCharactersInFile: 'Keine Charaktere in der Datei gefunden – nichts importiert.',
     importedCount: (n) => `${n} Charakter(e) importiert.`,
     weapons: 'Waffen',
+    magic: 'Magie',
+    magicSection: 'Magie-Bereich',
     addWeapon: '+ Waffe',
     equipped: 'Ausgerüstet',
     unequipped: 'Verstaut',

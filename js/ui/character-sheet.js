@@ -1,5 +1,5 @@
 import { el } from './dom.js';
-import { getState, t } from '../app.js';
+import { getState, t, rerender } from '../app.js';
 import { setReserveCount, removeReserve, removeDrone } from '../model.js';
 import { updateCharacter, catName, typeNameL, droneNames } from './sheet-common.js';
 import { weaponCard } from './weapon-card.js';
@@ -53,22 +53,60 @@ function reserveSection(c) {
   return wrap;
 }
 
+// Which top-level tab (weapons | magic) is showing, and for which character.
+// View-only state: it resets to weapons when a different character is opened, and
+// survives the full re-render on each mutation. Not persisted.
+let activeTab = 'weapons';
+let activeTabCharId = null;
+
 export function renderSheet(container, characterId) {
   const c = getState().characters.find((x) => x.id === characterId);
   if (!c) { container.append(el('div', { class: 'empty' }, t('characterNotFound'))); return; }
 
+  if (characterId !== activeTabCharId) { activeTab = 'weapons'; activeTabCharId = characterId; }
+  const magical = !!c.magic;
+  // The Magic tab only exists for magical characters; fall back to weapons otherwise.
+  const tab = (magical && activeTab === 'magic') ? 'magic' : 'weapons';
+
+  const tabBtn = (id, label) => el('button', {
+    class: id === tab ? 'tab active' : 'tab',
+    role: 'tab', 'aria-selected': id === tab ? 'true' : 'false',
+    onclick: id === tab ? null : () => { activeTab = id; rerender(); },
+  }, label);
+
+  // The whole sheet is colour-themed by section: weapons keeps the amber accent,
+  // magic re-points --accent to blue so every accent-derived element recolours.
+  const sheet = el('div', { class: tab === 'magic' ? 'sheet theme-magic' : 'sheet' });
+
+  // Clickable section tabs. The contextual + Weapon action shows on the Weapons tab.
+  sheet.append(el('div', { class: 'tabs' }, [
+    el('div', { class: 'tablist', role: 'tablist' }, [
+      tabBtn('weapons', t('weapons')),
+      magical ? tabBtn('magic', t('magic')) : null,
+    ]),
+    tab === 'weapons'
+      ? el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, t('addWeapon'))
+      : null,
+  ]));
+
+  if (tab === 'magic') {
+    sheet.append(el('div', { class: 'group' }, el('div', { class: 'muted' }, t('magicSection'))));
+  } else {
+    weaponsTab(sheet, c);
+  }
+
+  container.append(sheet);
+}
+
+function weaponsTab(container, c) {
   // Runner weapons (personally carried) vs drone-mounted weapons.
   const runner = c.weapons.filter((w) => w.mount === 'carried');
   const carrying = runner.filter((w) => !w.stashed);
   const stashed = runner.filter((w) => w.stashed);
   const droneList = droneNames(c);
 
-  // Runner section: Weapons with Equipped / Unequipped sub-headers.
+  // Runner weapons: Equipped / Unequipped sub-headers (the Weapons tab is the header).
   container.append(el('div', { class: 'group' }, [
-    el('div', { class: 'section-title' }, [
-      el('h2', {}, t('weapons')),
-      el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, t('addWeapon')),
-    ]),
     el('div', { class: 'subgroup-title' }, t('equipped')),
     carrying.length ? weaponList(c, carrying, true) : el('div', { class: 'muted' }, t('nothingEquipped')),
     el('div', { class: 'subgroup-title' }, t('unequipped')),

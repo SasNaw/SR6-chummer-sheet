@@ -89,6 +89,24 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .section-title h2 { font-size: 18px; text-transform: uppercase; letter-spacing: 0.08em; }
 .section-title h2::before { content: ''; display: inline-block; width: 3px; height: 0.9em; background: var(--accent); margin-right: 9px; vertical-align: -1px; }
 
+/* The sheet body, themed per section. Magic re-points the accent token to an
+   arcane blue, so the active tab marker and any accent-coloured content (counts,
+   section ticks, accent buttons) recolour from amber to blue automatically. */
+.sheet { display: grid; gap: 18px; }
+.theme-magic { --accent: #4d9bff; --accent-ink: #03142e; }
+
+/* Section tabs (Weapons / Magic) — clickable top-level headers. The active tab
+   carries the accent marker that elsewhere signals "this is the live header". */
+.tabs { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.tablist { display: flex; gap: 24px; align-items: center; }
+.tab {
+  background: none; border: none; border-radius: 0; min-height: 0; padding: 2px 0;
+  font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+}
+.tab:hover { color: var(--text); border-color: transparent; }
+.tab.active { color: var(--text); }
+.tab.active::before { content: ''; display: inline-block; width: 3px; height: 0.9em; background: var(--accent); margin-right: 9px; vertical-align: -1px; }
+
 /* Sub-header: mono console label */
 .subgroup-title { font-family: var(--mono); color: var(--muted); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 6px; }
 
