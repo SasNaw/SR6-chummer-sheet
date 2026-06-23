@@ -87,6 +87,14 @@ export const STRINGS = {
     catalogInvalid: 'That file is not a weapon catalog.',
     clearCatalogConfirm: 'Clear the loaded weapon catalog?',
     findWeapon: 'Find weapon (catalog)',
+    // Spirit catalog
+    loadSpiritCatalog: 'Load spirit catalog',
+    clearSpiritCatalog: 'Clear spirit catalog',
+    spiritCatalogStatus: (n) => `Spirit catalog: ${n} spirits`,
+    noSpiritCatalog: 'No spirit catalog loaded',
+    spiritCatalogLoaded: (n) => `Loaded ${n} spirits.`,
+    spiritCatalogInvalid: 'That file is not a spirit catalog.',
+    clearSpiritCatalogConfirm: 'Clear the loaded spirit catalog?',
   },
   de: {
     language: 'Sprache',
@@ -160,6 +168,13 @@ export const STRINGS = {
     catalogInvalid: 'Diese Datei ist kein Waffenkatalog.',
     clearCatalogConfirm: 'Geladenen Waffenkatalog löschen?',
     findWeapon: 'Waffe suchen (Katalog)',
+    loadSpiritCatalog: 'Geisterkatalog laden',
+    clearSpiritCatalog: 'Geisterkatalog löschen',
+    spiritCatalogStatus: (n) => `Geisterkatalog: ${n} Geister`,
+    noSpiritCatalog: 'Kein Geisterkatalog geladen',
+    spiritCatalogLoaded: (n) => `${n} Geister geladen.`,
+    spiritCatalogInvalid: 'Diese Datei ist kein Geisterkatalog.',
+    clearSpiritCatalogConfirm: 'Geladenen Geisterkatalog löschen?',
   },
 };
 

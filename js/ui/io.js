@@ -4,6 +4,7 @@ import { importFromXmlString } from '../xml-import.js';
 import { serialize, deserialize, mergeState } from '../store.js';
 import { upsertCharacter } from '../model.js';
 import { getCatalog, setCatalog, clearCatalog, catalogCount, isWeaponCatalog } from '../catalog.js';
+import { setSpiritCatalog, clearSpiritCatalog, spiritCatalogCount, isSpiritCatalog } from '../spirit-catalog.js';
 
 function readFile(accept, cb) {
   const input = el('input', { type: 'file', accept });
@@ -78,4 +79,22 @@ export function renderIoBar(container, { onImported }) {
     ? el('button', { class: 'danger', onclick: () => { if (confirm(t('clearCatalogConfirm'))) { clearCatalog(); rerender(); } } }, t('clearCatalog'))
     : null;
   container.append(el('div', { class: 'card row' }, [status, loadCat, clearCat].filter(Boolean)));
+
+  // Spirit catalog (on-device, optional): load a locally-generated catalog file.
+  const sCount = spiritCatalogCount();
+  const sStatus = el('span', { class: 'muted' }, sCount ? t('spiritCatalogStatus', sCount) : t('noSpiritCatalog'));
+  const loadSpirit = el('button', {
+    onclick: () => readFile('.json,application/json', (text) => {
+      let obj;
+      try { obj = JSON.parse(text); } catch { obj = null; }
+      if (!isSpiritCatalog(obj)) { alert(t('spiritCatalogInvalid')); return; }
+      setSpiritCatalog(obj);
+      alert(t('spiritCatalogLoaded', Object.keys(obj.spirits).length));
+      rerender();
+    }),
+  }, t('loadSpiritCatalog'));
+  const clearSpirit = sCount
+    ? el('button', { class: 'danger', onclick: () => { if (confirm(t('clearSpiritCatalogConfirm'))) { clearSpiritCatalog(); rerender(); } } }, t('clearSpiritCatalog'))
+    : null;
+  container.append(el('div', { class: 'card row' }, [sStatus, loadSpirit, clearSpirit].filter(Boolean)));
 }
