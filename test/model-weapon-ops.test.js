@@ -5,18 +5,18 @@ import { createWeapon, fire, spend, addRounds, setLoaded } from '../js/model.js'
 function har() {
   return createWeapon({
     name: 'FN HAR', magazineCapacity: 20,
-    firingModes: [{ mode: 'SA', rounds: 1 }, { mode: 'BF', rounds: 3 }, { mode: 'FA', rounds: 6 }],
+    firingModes: [{ mode: 'SA', rounds: 2 }, { mode: 'BF', rounds: 4 }, { mode: 'FA', rounds: 10 }],
     loaded: { ammoType: 'regular', count: 20 },
   });
 }
 
-test('fire subtracts the mode round cost', () => {
-  assert.equal(fire(har(), 'BF').loaded.count, 17);
-  assert.equal(fire(har(), 'FA').loaded.count, 14);
+test('fire subtracts the canonical mode round cost', () => {
+  assert.equal(fire(har(), 'BF').loaded.count, 16); // 20 - 4
+  assert.equal(fire(har(), 'FA').loaded.count, 10); // 20 - 10
 });
 
 test('fire floors at zero, never negative', () => {
-  const low = createWeapon({ magazineCapacity: 20, firingModes: [{ mode: 'FA', rounds: 6 }], loaded: { ammoType: 'regular', count: 2 } });
+  const low = createWeapon({ magazineCapacity: 20, firingModes: [{ mode: 'FA', rounds: 10 }], loaded: { ammoType: 'regular', count: 2 } });
   assert.equal(fire(low, 'FA').loaded.count, 0);
 });
 

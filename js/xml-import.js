@@ -1,5 +1,6 @@
 import { createCharacter, createWeapon, createReservePool } from './model.js';
-import { getWeaponDef, DEFAULT_MODE_ROUNDS } from './weapons-db.js';
+import { getWeaponDef } from './weapons-db.js';
+import { FIRING_MODE_ROUNDS } from './firing-modes.js';
 import { prettifyRef } from './util.js';
 
 // Resolve a weapon ref to a definition, preferring the loaded catalog (its 200+
@@ -12,7 +13,7 @@ function resolveWeaponDef(ref, catalog, lang) {
     name: (lang === 'de' && w.nameDe) ? w.nameDe : (w.name || prettifyRef(ref)),
     magazineCapacity: w.magazineCapacity ?? 0,
     ammoCategory: w.ammoCategory ?? null,
-    firingModes: (w.firingModes || []).map((m) => ({ mode: m, rounds: DEFAULT_MODE_ROUNDS[m] ?? 1 })),
+    firingModes: (w.firingModes || []).map((m) => ({ mode: m, rounds: FIRING_MODE_ROUNDS[m] ?? 1 })),
   };
 }
 

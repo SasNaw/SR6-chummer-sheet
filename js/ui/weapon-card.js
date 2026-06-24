@@ -2,9 +2,9 @@ import { el } from './dom.js';
 import { t } from '../app.js';
 import {
   fire, spend, addRounds, setLoaded, reload, matchingReserves, updateWeapon, removeWeapon,
-  weaponDisplayName,
+  weaponDisplayName, expandFiringModes,
 } from '../model.js';
-import { updateCharacter, findW, catName, typeNameL } from './sheet-common.js';
+import { updateCharacter, findW, catName, typeNameL, modeLabel } from './sheet-common.js';
 
 export function weaponCard(c, w, { stashable = false } = {}) {
   const card = el('div', { class: 'card' });
@@ -27,11 +27,13 @@ export function weaponCard(c, w, { stashable = false } = {}) {
     ammoSwitcher(c, w),
   ]));
 
-  // Firing-mode buttons (ammo-interacting → right-aligned)
-  if (w.firingModes.length) {
-    card.append(el('div', { class: 'modes end' }, w.firingModes.map((m) =>
+  // Firing-mode buttons (ammo-interacting → right-aligned). Derived centrally:
+  // SS is added wherever SA is present and round costs come from the rules module.
+  const modes = expandFiringModes(w.firingModes);
+  if (modes.length) {
+    card.append(el('div', { class: 'modes end' }, modes.map((m) =>
       el('button', { onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, fire(findW(ch, w.id), m.mode))) },
-        `${m.mode} (-${m.rounds})`))));
+        `${modeLabel(m.mode)} (-${m.rounds})`))));
   }
 
   // Manual controls (ammo-interacting → right-aligned)

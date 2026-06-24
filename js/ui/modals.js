@@ -6,7 +6,7 @@ import {
 } from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
 import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
-import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
+import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, modeLabel, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
 
 // Build category/type <option>s sorted by their localized label.
 const byLabel = (fn) => (a, b) => fn(a).localeCompare(fn(b));
@@ -115,7 +115,7 @@ export function openAddWeaponModal(c, mount) {
   // Firing-mode toggle buttons (tagged with their mode for catalog autofill).
   const selected = new Set();
   const modeButtons = STANDARD_FIRING_MODES.map((m) => {
-    const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${m.mode} (${m.rounds})`);
+    const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${modeLabel(m.mode)} (${m.rounds})`);
     btn.addEventListener('click', () => {
       if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
       else { selected.add(m.mode); btn.classList.add('on'); }

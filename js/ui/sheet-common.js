@@ -4,17 +4,16 @@ import { getState, mutate } from '../app.js';
 import { upsertCharacter } from '../model.js';
 import { categoryName, typeName } from '../ammo-db.js';
 import { getCatalog, catalogCategoryName, catalogTypeName } from '../catalog.js';
+import { STANDARD_FIRING_MODES, modeLabel as firingModeLabel } from '../firing-modes.js';
 
-// Standard SR6 firing modes offered when creating a weapon (round cost per mode;
-// editable later via the weapon's edit dialog).
-export const STANDARD_FIRING_MODES = [
-  { mode: 'SS', rounds: 1 },
-  { mode: 'SA', rounds: 1 },
-  { mode: 'BF', rounds: 3 },
-  { mode: 'FA', rounds: 6 },
-];
+// Standard SR6 firing modes offered when creating a weapon (re-exported from the
+// firing-mode rules module).
+export { STANDARD_FIRING_MODES };
 
 export function uiLang() { return getState().lang || 'en'; }
+
+// Localized firing-mode label (e.g. 'BF' in English, 'SM' in German).
+export function modeLabel(code) { return firingModeLabel(code, uiLang()); }
 
 // Localized display names: prefer the loaded catalog's name (in the current
 // language), falling back to the built-in tables when no catalog is loaded or

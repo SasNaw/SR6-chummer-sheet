@@ -1,23 +1,20 @@
 import { prettifyRef } from './util.js';
 
-// Default round cost per firing mode, used to turn the catalog's mode list
-// (plain strings) into the model's { mode, rounds } shape on import.
-export const DEFAULT_MODE_ROUNDS = { SS: 1, SA: 1, BF: 3, FA: 6 };
-
 // ref -> { name, magazineCapacity, ammoCategory, firingModes }
-// Magazine sizes and firing-mode round costs are sensible defaults the user edits.
+// Firing-mode round costs are the canonical SR6 values (see js/firing-modes.js);
+// SS is added automatically wherever SA is present at display time.
 export const WEAPONS_DB = {
   ares_predator_vi: {
     name: 'Ares Predator VI', magazineCapacity: 15, ammoCategory: 'ammo_heavy_smg',
-    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 1 }],
+    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 2 }],
   },
   fn_har: {
     name: 'FN HAR', magazineCapacity: 20, ammoCategory: 'ammo_rifles',
-    firingModes: [{ mode: 'SA', rounds: 1 }, { mode: 'BF', rounds: 3 }, { mode: 'FA', rounds: 6 }],
+    firingModes: [{ mode: 'SA', rounds: 2 }, { mode: 'BF', rounds: 4 }, { mode: 'FA', rounds: 10 }],
   },
   remington_roomsweeper: {
     name: 'Remington Roomsweeper', magazineCapacity: 8, ammoCategory: 'ammo_shotgun',
-    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 1 }],
+    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 2 }],
   },
 };
 
@@ -31,6 +28,6 @@ export function getWeaponDef(ref) {
     name: prettifyRef(ref),
     magazineCapacity: 10,
     ammoCategory: null,
-    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 1 }],
+    firingModes: [{ mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 2 }],
   };
 }

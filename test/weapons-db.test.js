@@ -20,7 +20,7 @@ test('unknown refs fall back to a prettified, editable default', () => {
   assert.equal(def.magazineCapacity, 10);
   assert.equal(def.ammoCategory, null);
   assert.deepEqual(def.firingModes, [
-    { mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 1 },
+    { mode: 'SS', rounds: 1 }, { mode: 'SA', rounds: 2 },
   ]);
 });
 
