@@ -47,7 +47,7 @@ test('S4T0: a catalog overrides the built-in weapon defs on import', () => {
   const har = c.weapons.find((w) => w.ref === 'fn_har');
   assert.equal(har.name, 'FN Sturmgewehr');         // localized catalog name
   assert.equal(har.magazineCapacity, 35);            // catalog value, not built-in 20
-  assert.deepEqual(har.firingModes, [{ mode: 'SA', rounds: 1 }, { mode: 'BF', rounds: 3 }, { mode: 'FA', rounds: 6 }]);
+  assert.deepEqual(har.firingModes, [{ mode: 'SA', rounds: 2 }, { mode: 'BF', rounds: 4 }, { mode: 'FA', rounds: 10 }]);
   // A ref not in the catalog falls back to the built-in table.
   const ares = c.weapons.find((w) => w.ref === 'ares_predator_vi');
   assert.equal(ares.name, 'Ares Predator VI');

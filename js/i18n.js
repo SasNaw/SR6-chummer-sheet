@@ -156,7 +156,7 @@ export const STRINGS = {
     editAlias: 'Anzeigename bearbeiten',
     remove: 'Entfernen',
     removeWeaponConfirm: (name) => `${name} entfernen?`,
-    set: 'Setzen',
+    set: 'Menge',
     setLoadedPrompt: 'Geladene Patronen setzen:',
     reload: 'Nachladen',
     ammoSwitchTitle: 'Munition wechseln – geladene Patronen wandern zurück in ihren Pool, dann wird aus dem gewählten Pool nachgeladen',

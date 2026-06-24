@@ -1,4 +1,8 @@
 import { newId, clamp } from './util.js';
+import { FIRING_MODE_ROUNDS } from './firing-modes.js';
+
+// Re-exported so the UI can import firing-mode display logic from the model.
+export { expandFiringModes } from './firing-modes.js';
 
 export function createReservePool(props = {}) {
   const { ammoCategory, ammoType = 'regular', count = 0 } = props;
@@ -45,9 +49,9 @@ function withCount(weapon, count) {
 }
 
 export function fire(weapon, mode) {
-  const fm = weapon.firingModes.find((m) => m.mode === mode);
-  if (!fm) throw new Error(`Unknown firing mode "${mode}"`);
-  return withCount(weapon, Math.max(0, weapon.loaded.count - fm.rounds));
+  const rounds = FIRING_MODE_ROUNDS[mode];
+  if (rounds == null) throw new Error(`Unknown firing mode "${mode}"`);
+  return withCount(weapon, Math.max(0, weapon.loaded.count - rounds));
 }
 
 export function spend(weapon, n = 1) {
