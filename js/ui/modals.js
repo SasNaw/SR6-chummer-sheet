@@ -131,18 +131,33 @@ export function openAddWeaponModal(c, mount) {
   const fields = [];
 
   // Optional catalog picker: autocomplete weapon names -> autofill the fields.
+  //
+  // Deliberately NOT a native <datalist>: Firefox for Android ignores it entirely
+  // (the field degrades to a plain text input) and it is broken in Android WebView
+  // 8+, which is what an installed PWA can end up running in. Since this app is
+  // mobile-first, the suggestion list is plain DOM we render ourselves, so it
+  // behaves identically on every engine.
   const catalog = getCatalog();
   if (catalog) {
     const entries = catalogWeaponList(catalog, uiLang());
     const byLabel = new Map(entries.map((e) => [e.label, e]));
-    const dl = el('datalist', { id: 'addweapon-catalog' }, entries.map((e) => el('option', { value: e.label })));
-    const finder = el('input', { type: 'text', placeholder: t('findWeapon'), list: 'addweapon-catalog', autocomplete: 'off' });
-    // Autofill as soon as the value matches a catalog name. Bound to both 'input'
-    // and 'change' so picking a datalist suggestion fills immediately on every
-    // browser (some fire only one of the two).
-    const applyPick = () => {
-      const e = byLabel.get(finder.value);
-      if (!e) return;
+
+    const finder = el('input', {
+      type: 'text', placeholder: t('findWeapon'), 'aria-label': t('findWeapon'),
+      role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': 'false',
+      'aria-controls': 'addweapon-suggest',
+      autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false',
+    });
+    const list = el('div', { class: 'suggest', id: 'addweapon-suggest', role: 'listbox' });
+    list.hidden = true;
+
+    // Fold case and diacritics so "prazision" also finds "Präzisionsgewehr".
+    const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const MAX_SUGGESTIONS = 50; // keep the list scannable (and cheap) on a phone
+    let shown = [];
+    let active = -1;
+
+    const applyPick = (e) => {
       nameInput.value = e.label;
       capInput.value = String(e.magazineCapacity ?? '');
       if (e.ammoCategory) {
@@ -153,9 +168,75 @@ export function openAddWeaponModal(c, mount) {
       }
       for (const m of STANDARD_FIRING_MODES) setMode(m.mode, (e.firingModes || []).includes(m.mode));
     };
-    finder.addEventListener('input', applyPick);
-    finder.addEventListener('change', applyPick);
-    fields.push(el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('findWeapon')), finder]), dl);
+
+    function closeList() {
+      clear(list);
+      list.hidden = true;
+      finder.setAttribute('aria-expanded', 'false');
+      finder.removeAttribute('aria-activedescendant');
+      shown = [];
+      active = -1;
+    }
+
+    function highlight(i) {
+      const rows = [...list.children];
+      if (rows.length === 0) return;
+      active = (i + rows.length) % rows.length;
+      rows.forEach((r, n) => {
+        const on = n === active;
+        r.classList.toggle('active', on);
+        r.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      finder.setAttribute('aria-activedescendant', rows[active].id);
+      rows[active].scrollIntoView({ block: 'nearest' });
+    }
+
+    function choose(e) {
+      finder.value = e.label;
+      applyPick(e);
+      closeList();
+    }
+
+    function openList() {
+      const q = norm(finder.value.trim());
+      shown = (q ? entries.filter((e) => norm(e.label).includes(q)) : entries).slice(0, MAX_SUGGESTIONS);
+      clear(list);
+      if (shown.length === 0) { closeList(); return; }
+      shown.forEach((e, i) => {
+        // A div, not a button: openModal's focus trap cycles every button in the
+        // dialog, and 50 of them would bury Cancel/Add behind the suggestions.
+        const row = el('div', { class: 'suggest-item', role: 'option', id: `sug-${i}`, 'aria-selected': 'false' }, e.label);
+        row.addEventListener('click', () => choose(e));
+        list.append(row);
+      });
+      list.hidden = false;
+      finder.setAttribute('aria-expanded', 'true');
+      active = -1;
+    }
+
+    // No blur handler on purpose: hiding the list on blur races the tap that
+    // picks a row on touch devices, and closing on scroll would make a long list
+    // unusable. It closes on pick, on Escape, or with the modal itself.
+    finder.addEventListener('focus', openList);
+    finder.addEventListener('input', () => {
+      openList();
+      // Keep the old behaviour for a pasted/typed exact name.
+      const exact = byLabel.get(finder.value);
+      if (exact) applyPick(exact);
+    });
+    finder.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && !list.hidden) {
+        closeList();
+        ev.stopPropagation(); // otherwise openModal's handler closes the dialog
+        return;
+      }
+      if (list.hidden) return;
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); highlight(active + 1); }
+      else if (ev.key === 'ArrowUp') { ev.preventDefault(); highlight(active - 1); }
+      else if (ev.key === 'Enter' && active >= 0) { ev.preventDefault(); choose(shown[active]); }
+    });
+
+    fields.push(el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('findWeapon')), finder, list]));
   }
 
   fields.push(
