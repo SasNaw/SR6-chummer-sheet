@@ -78,8 +78,14 @@ input, select {
 .count { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
 .count .cap { color: var(--muted); font-size: 18px; font-weight: 400; }
 
-.modes { display: flex; gap: 8px; flex-wrap: wrap; }
-.modes button { font-family: var(--mono); font-size: 13px; letter-spacing: 0.03em; }
+/* Firing modes: at most four (SS/SA/BF/FA), and they must all fit on one row.
+   At the default button padding the four German labels need 382px, but a 360px
+   phone only gives the card 294px of inner width, so they wrapped 3+1. Tighter
+   padding, 12px type and no letter-spacing bring it to 284px, which fits every
+   phone from 360px up. flex-wrap stays as the fallback for anything narrower —
+   those wrap as before rather than clipping. */
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.modes button { font-family: var(--mono); font-size: 12px; letter-spacing: 0; padding: 10px 6px; }
 .list { display: grid; gap: 10px; }
 .empty { text-align: center; color: var(--muted); padding: 32px 0; }
 
