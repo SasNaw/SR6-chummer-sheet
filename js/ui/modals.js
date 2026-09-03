@@ -3,6 +3,7 @@ import { t } from '../app.js';
 import {
   addReserve, createReservePool, addDrone, createWeapon, addWeapon,
   createSpirit, addSpirit, optionalPowerCap, setAttackRating, updateWeapon,
+  matchingReserves, reload,
 } from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
 import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
@@ -79,6 +80,57 @@ export function openAddPoolModal(c) {
           })));
         },
       }, t('add')),
+    ]),
+  ]);
+}
+
+// Pick which reserve pool the weapon reloads from. Selecting a different type
+// runs reload(), which first returns the rounds currently loaded to their own
+// pool and then fills from the chosen one — so nothing is lost by switching.
+export function openAmmoSwitchModal(c, w) {
+  const pools = matchingReserves(c, w.id);
+  // The loaded type is always listed, even with no pool behind it, so the dialog
+  // always shows what is actually chambered.
+  const types = pools.map((p) => p.ammoType);
+  if (!types.includes(w.loaded.ammoType)) types.unshift(w.loaded.ammoType);
+  const countByType = Object.fromEntries(pools.map((p) => [p.ammoType, p.count]));
+
+  // No pool matches this weapon's category: the only listable type would be the
+  // loaded one at (0), which cannot be switched to. Say so instead.
+  if (pools.length === 0) {
+    const closeEmpty = openModal(t('switchAmmoTitle'), [
+      el('div', { class: 'muted' }, t('noPoolsToSwitch')),
+      el('div', { class: 'row spread' }, [el('button', { onclick: () => closeEmpty() }, t('cancel'))]),
+    ]);
+    return;
+  }
+
+  const radios = types.map((code) => {
+    const input = el('input', { type: 'radio', name: 'ammo-switch', value: code });
+    input.checked = code === w.loaded.ammoType;
+    return { code, input };
+  });
+
+  const close = openModal(t('switchAmmoTitle'), [
+    el('div', { class: 'field' }, [
+      el('span', { class: 'muted' }, t('ammoType')),
+      el('div', { class: 'pick-list', role: 'radiogroup', 'aria-label': t('ammoType') },
+        radios.map(({ code, input }) =>
+          el('label', { class: 'pick-row' }, [input, `${typeNameL(code)} (${countByType[code] ?? 0})`]))),
+    ]),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, t('cancel')),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const chosen = (radios.find((r) => r.input.checked) || {}).code;
+          close();
+          // Same guard the old <select> had: switching to what is already loaded
+          // would otherwise top the magazine up as a side effect.
+          if (!chosen || chosen === w.loaded.ammoType) return;
+          updateCharacter(c.id, (ch) => reload(ch, w.id, chosen));
+        },
+      }, t('switchAmmo')),
     ]),
   ]);
 }
@@ -317,7 +369,7 @@ export function openAddSpiritModal(c) {
   const typeSel = el('select', {}, spirits.map((s) => el('option', { value: s.id }, s.label)));
   const forceStepper = stepper(3, { min: 1, onChange: () => rebuildOptional() });
   const servicesStepper = stepper(1, { min: 0 });
-  const optBox = el('div', { class: 'opt-powers' });
+  const optBox = el('div', { class: 'pick-list' });
   const countLabel = el('div', { class: 'muted' }, '');
 
   const selected = new Set(); // keyed by an optional power's English name
@@ -337,7 +389,7 @@ export function openAddSpiritModal(c) {
         if (cb.checked) selected.add(p.en); else selected.delete(p.en);
         rebuildOptional();
       });
-      optBox.append(el('label', { class: 'opt-power' }, [cb, localizedPair(p, uiLang())]));
+      optBox.append(el('label', { class: 'pick-row' }, [cb, localizedPair(p, uiLang())]));
     }
     countLabel.textContent = t('optionalPowersCount', selected.size, cap);
   }

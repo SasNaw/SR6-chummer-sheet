@@ -5,7 +5,7 @@ import {
   weaponDisplayName, expandFiringModes,
 } from '../model.js';
 import { updateCharacter, findW, catName, typeNameL, modeLabel } from './sheet-common.js';
-import { openAttackRatingModal } from './modals.js';
+import { openAttackRatingModal, openAmmoSwitchModal } from './modals.js';
 import { ATTACK_RATING_BANDS } from '../catalog.js';
 
 // Renders as "10 / 9 / 8 / \u2014 / \u2014". A 0 band means the weapon has no rating at
@@ -46,7 +46,10 @@ export function weaponCard(c, w, { stashable = false } = {}) {
 
   // Count + ammo-pool switcher
   card.append(el('div', { class: 'row spread' }, [
-    el('div', { class: 'count' }, [String(w.loaded.count), el('span', { class: 'cap' }, ` / ${w.magazineCapacity}`)]),
+    el('div', { class: 'row count-row' }, [
+      el('div', { class: 'count' }, [String(w.loaded.count), el('span', { class: 'cap' }, ` / ${w.magazineCapacity}`)]),
+      el('span', { class: 'loaded-type' }, typeNameL(w.loaded.ammoType)),
+    ]),
     ammoSwitcher(c, w),
   ]));
 
@@ -86,32 +89,21 @@ export function weaponCard(c, w, { stashable = false } = {}) {
   return card;
 }
 
-// Dropdown of the weapon's eligible reserve pools. Switching returns the rounds
-// currently loaded to their origin pool, then reloads from the chosen pool
-// (reload() does both). When the weapon type has no reserve pools at all, the same
-// dropdown is shown but coloured warning-red.
+// Opens the pool picker. A native <select> here rendered as a full-screen system
+// dialog on Android and could not show a selection indicator, so the choice moved
+// into a normal modal. Coloured warning-red when the weapon type has no reserve
+// pools at all.
 function ammoSwitcher(c, w) {
-  const pools = matchingReserves(c, w.id);
-  const empty = pools.length === 0;
-  const countByType = Object.fromEntries(pools.map((p) => [p.ammoType, p.count]));
-  const types = pools.map((p) => p.ammoType);
-  if (!types.includes(w.loaded.ammoType)) types.unshift(w.loaded.ammoType); // always show current
-
-  const sel = el('select', {
+  const empty = matchingReserves(c, w.id).length === 0;
+  return el('button', {
     class: empty ? 'ammo-empty' : null,
     title: empty ? t('noAmmoTitle') : t('ammoSwitchTitle'),
-    onchange: () => {
-      if (sel.value !== w.loaded.ammoType) updateCharacter(c.id, (ch) => reload(ch, w.id, sel.value));
-    },
-  }, types.map((code) => el('option', { value: code },
-    `${typeNameL(code)} (${countByType[code] ?? 0})`))); // missing pool reads as 0
-  sel.value = w.loaded.ammoType;
-  sel.style.width = 'auto';
-  return sel;
+    onclick: () => openAmmoSwitchModal(c, w),
+  }, t('switchAmmo'));
 }
 
 // Top up the currently-loaded type to capacity. Switching to a different type is
-// done via the ammo dropdown (ammoSwitcher).
+// done via the Switch button (ammoSwitcher -> openAmmoSwitchModal).
 function doReload(c, w) {
   const pools = matchingReserves(c, w.id);
   if (pools.length === 0) {
