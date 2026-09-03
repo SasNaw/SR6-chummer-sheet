@@ -14,6 +14,7 @@ function resolveWeaponDef(ref, catalog, lang) {
     magazineCapacity: w.magazineCapacity ?? 0,
     ammoCategory: w.ammoCategory ?? null,
     firingModes: (w.firingModes || []).map((m) => ({ mode: m, rounds: FIRING_MODE_ROUNDS[m] ?? 1 })),
+    attackRating: w.attackRating || [],
   };
 }
 
@@ -127,6 +128,7 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
       magazineCapacity: def.magazineCapacity,
       ammoCategory: def.ammoCategory,
       firingModes: def.firingModes,
+      attackRating: def.attackRating,
       loaded: { ammoType: defaultAmmoType(reserves, def.ammoCategory), count: def.magazineCapacity },
       notes: '',
     });

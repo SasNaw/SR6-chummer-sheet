@@ -5,6 +5,16 @@ import {
   weaponDisplayName, expandFiringModes,
 } from '../model.js';
 import { updateCharacter, findW, catName, typeNameL, modeLabel } from './sheet-common.js';
+import { openAttackRatingModal } from './modals.js';
+import { ATTACK_RATING_BANDS } from '../catalog.js';
+
+// Renders as "10 / 9 / 8 / \u2014 / \u2014". A 0 band means the weapon has no rating at
+// that range, which the SR6 books print as a dash.
+function formatAttackRating(values) {
+  const ar = Array.isArray(values) ? values : [];
+  return Array.from({ length: ATTACK_RATING_BANDS },
+    (_, i) => (ar[i] > 0 ? String(ar[i]) : '\u2014')).join(' / ');
+}
 
 export function weaponCard(c, w, { stashable = false } = {}) {
   const card = el('div', { class: 'card' });
@@ -19,6 +29,19 @@ export function weaponCard(c, w, { stashable = false } = {}) {
       class: 'icon danger', title: t('remove'),
       onclick: () => { if (confirm(t('removeWeaponConfirm', weaponDisplayName(w)))) updateCharacter(c.id, (ch) => removeWeapon(ch, w.id)); },
     }, '🗑'),
+  ]));
+
+  // Attack rating across the five range bands, with an edit button for weapons
+  // whose mods change the printed values. 0 means "no rating at that range".
+  card.append(el('div', { class: 'row spread' }, [
+    el('div', { class: 'ar', title: t('attackRatingTitle') }, [
+      el('span', { class: 'ar-label' }, t('attackRating')),
+      el('span', { class: 'ar-vals' }, formatAttackRating(w.attackRating)),
+    ]),
+    el('button', {
+      class: 'icon', title: t('editAttackRating'),
+      onclick: () => openAttackRatingModal(c, w),
+    }, '✎'),
   ]));
 
   // Count + ammo-pool switcher

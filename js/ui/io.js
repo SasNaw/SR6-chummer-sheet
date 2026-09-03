@@ -1,5 +1,5 @@
 import { el } from './dom.js';
-import { getState, mutate, t, rerender } from '../app.js';
+import { getState, mutate, t, rerender, applyBackfills } from '../app.js';
 import { importFromXmlString } from '../xml-import.js';
 import { serialize, deserialize, mergeState } from '../store.js';
 import { upsertCharacter } from '../model.js';
@@ -71,8 +71,10 @@ export function renderIoBar(container, { onImported }) {
       try { obj = JSON.parse(text); } catch { obj = null; }
       if (!isWeaponCatalog(obj)) { alert(t('catalogInvalid')); return; }
       setCatalog(obj);
+      // A freshly loaded catalog can fill in attack ratings for weapons that
+      // were added or imported before it was available.
       alert(t('catalogLoaded', Object.keys(obj.weapons).length));
-      rerender();
+      mutate(applyBackfills); // also re-renders
     }),
   }, t('loadCatalog'));
   const clearCat = count

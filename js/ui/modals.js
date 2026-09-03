@@ -2,11 +2,11 @@ import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
 import {
   addReserve, createReservePool, addDrone, createWeapon, addWeapon,
-  createSpirit, addSpirit, optionalPowerCap,
+  createSpirit, addSpirit, optionalPowerCap, setAttackRating, updateWeapon,
 } from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
 import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
-import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, modeLabel, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
+import { updateCharacter, findW, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, modeLabel, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
 
 // Build category/type <option>s sorted by their localized label.
 const byLabel = (fn) => (a, b) => fn(a).localeCompare(fn(b));
@@ -83,6 +83,41 @@ export function openAddPoolModal(c) {
   ]);
 }
 
+// Edit a weapon's attack rating across the five SR6 range bands. Values come
+// from the catalog, but mods change them, so every band is editable. An empty
+// field saves as 0, which the card renders as an em dash.
+export function openAttackRatingModal(c, w) {
+  const bands = ['arClose', 'arNear', 'arMedium', 'arFar', 'arExtreme'];
+  const current = Array.isArray(w.attackRating) ? w.attackRating : [];
+
+  const inputs = bands.map((key, i) => {
+    const input = el('input', {
+      type: 'text', inputmode: 'numeric', 'aria-label': t(key),
+      value: current[i] > 0 ? String(current[i]) : '',
+    });
+    input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g, ''); });
+    return input;
+  });
+
+  const close = openModal(t('attackRatingTitle'), [
+    el('div', { class: 'ar-fields' }, bands.map((key, i) =>
+      el('label', { class: 'field' }, [el('span', { class: 'muted' }, t(key)), inputs[i]]))),
+    el('div', { class: 'muted' }, t('arBlankHint')),
+    el('div', { class: 'row spread' }, [
+      el('button', { onclick: () => close() }, t('cancel')),
+      el('button', {
+        class: 'accent',
+        onclick: () => {
+          const values = inputs.map((n) => n.value);
+          close();
+          // setAttackRating returns a whole weapon, which updateWeapon merges.
+          updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, setAttackRating(findW(ch, w.id), values)));
+        },
+      }, t('save')),
+    ]),
+  ]);
+}
+
 // Modal to add a drone: just a name. Appended to the bottom of the Drones section.
 export function openAddDroneModal(c) {
   const nameInput = el('input', { type: 'text', placeholder: t('droneNamePlaceholder') });
@@ -129,6 +164,7 @@ export function openAddWeaponModal(c, mount) {
   };
 
   const fields = [];
+  let picked = null; // the catalog entry, when the weapon came from the picker
 
   // Optional catalog picker: autocomplete weapon names -> autofill the fields.
   //
@@ -158,6 +194,7 @@ export function openAddWeaponModal(c, mount) {
     let active = -1;
 
     const applyPick = (e) => {
+      picked = e;   // carries the catalog id and attack rating onto the new weapon
       nameInput.value = e.label;
       capInput.value = String(e.magazineCapacity ?? '');
       if (e.ammoCategory) {
@@ -251,6 +288,8 @@ export function openAddWeaponModal(c, mount) {
         onclick: () => {
           const weapon = createWeapon({
             name: nameInput.value.trim() || 'New Weapon',
+            ref: (picked && picked.id) || '',
+            attackRating: (picked && picked.attackRating) || [],
             ammoCategory: typeSel.value,
             magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
             mount,

@@ -1,5 +1,6 @@
 import { newId, clamp } from './util.js';
 import { FIRING_MODE_ROUNDS } from './firing-modes.js';
+import { ATTACK_RATING_BANDS } from './catalog.js';
 
 // Re-exported so the UI can import firing-mode display logic from the model.
 export { expandFiringModes } from './firing-modes.js';
@@ -9,19 +10,66 @@ export function createReservePool(props = {}) {
   return { ammoCategory, ammoType, count };
 }
 
+// Coerce anything into exactly ATTACK_RATING_BANDS non-negative integers. 0 means
+// "no rating at that range" (Genesis's own representation) and renders as an
+// em dash; blanks, junk and negatives all collapse to it.
+function normalizeAttackRating(values) {
+  const src = Array.isArray(values) ? values : [];
+  const out = new Array(ATTACK_RATING_BANDS).fill(0);
+  for (let i = 0; i < ATTACK_RATING_BANDS; i += 1) {
+    const n = parseInt(src[i], 10);
+    if (Number.isInteger(n) && n > 0) out[i] = n;
+  }
+  return out;
+}
+
 export function createWeapon(props = {}) {
   const {
     name = '', alias = '', ref = '', mount = 'carried', magazineCapacity = 0,
-    ammoCategory = null, firingModes = [], loaded, notes = '', stashed = false, id,
+    ammoCategory = null, firingModes = [], loaded, notes = '', stashed = false,
+    attackRating = [], id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
     name, alias, ref, mount, magazineCapacity, ammoCategory,
     firingModes: firingModes.map((m) => ({ ...m })),
     loaded: loaded ? { ...loaded } : { ammoType: 'regular', count: 0 },
+    attackRating: normalizeAttackRating(attackRating),
     notes,
     stashed,
   };
+}
+
+// Returns a whole weapon (like the round ops) so the UI can hand it straight to
+// updateWeapon as `changes`.
+export function setAttackRating(weapon, values) {
+  return { ...weapon, attackRating: normalizeAttackRating(values) };
+}
+
+// Fill in attack ratings for weapons that have none, from the loaded catalog:
+// by catalog `ref` first, then by an exact match on either localized catalog
+// name. A weapon with any non-zero band is left alone, so a value someone edited
+// for weapon mods is never overwritten.
+export function backfillAttackRatings(character, catalog) {
+  const entries = catalog && catalog.weapons;
+  if (!entries) return character;
+
+  const byName = new Map();
+  for (const e of Object.values(entries)) {
+    if (e.name) byName.set(e.name, e);
+    if (e.nameDe) byName.set(e.nameDe, e);
+  }
+
+  let changed = false;
+  const weapons = character.weapons.map((w) => {
+    const current = Array.isArray(w.attackRating) ? w.attackRating : [];
+    if (current.some((n) => n > 0)) return w;
+    const hit = (w.ref && entries[w.ref]) || byName.get(w.name);
+    if (!hit || !hit.attackRating) return w;
+    changed = true;
+    return { ...w, attackRating: normalizeAttackRating(hit.attackRating) };
+  });
+  return changed ? { ...character, weapons } : character;
 }
 
 // The label shown for a weapon: the base name on its own, or, when the user has
