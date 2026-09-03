@@ -118,6 +118,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 
 .toggle.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 .ammo-empty { color: var(--danger); border-color: var(--danger); }
+/* Currently-chambered ammo type, shown beside the round count (the switch
+   control is now a button, so it no longer carries this itself). Baseline
+   alignment sits the small label on the big number's bottom line; the default
+   .row centring would float it against the middle of the 32px digits. */
+.count-row { align-items: baseline; }
+.loaded-type { color: var(--muted); font-size: 13px; }
 
 /* Modal */
 .modal-backdrop {
@@ -180,10 +186,11 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .stepper { display: inline-flex; align-items: center; gap: 10px; }
 .stepper-val { font-family: var(--mono); font-size: 18px; font-weight: 600; min-width: 1.5em; text-align: center; }
 
-/* Add-spirit modal: optional-power checkboxes */
-.opt-powers { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; }
-.opt-power { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.opt-power input { width: auto; min-height: 0; }
+/* Shared in-dialog pick list: the spirit dialog's optional-power checkboxes and
+   the ammo-switch radios. Rows are 44px so they stay tappable on a phone. */
+.pick-list { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; }
+.pick-row { display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px; }
+.pick-row input { width: auto; min-height: 0; flex: none; }
 
 @keyframes modal-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
