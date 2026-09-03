@@ -1,4 +1,6 @@
 import { loadState, saveState } from './store.js';
+import { backfillAttackRatings } from './model.js';
+import { getCatalog } from './catalog.js';
 import { el, clear } from './ui/dom.js';
 import { translate } from './i18n.js';
 import { renderPicker } from './ui/character-picker.js';
@@ -6,6 +8,16 @@ import { renderSheet } from './ui/character-sheet.js';
 import { renderIoBar } from './ui/io.js';
 
 let state = loadState();
+// Weapons saved before attack ratings existed (or imported with no catalog
+// loaded) take theirs from the catalog. Only empty ratings are filled, so a
+// value edited for weapon mods survives.
+export function applyBackfills(s) {
+  const catalog = getCatalog();
+  if (!catalog) return s;
+  const characters = s.characters.map((c) => backfillAttackRatings(c, catalog));
+  return characters.some((c, i) => c !== s.characters[i]) ? { ...s, characters } : s;
+}
+state = applyBackfills(state);
 // Reopen the last-viewed character on launch, if it still exists.
 let view = (state.activeId && state.characters.some((c) => c.id === state.activeId))
   ? { name: 'sheet', characterId: state.activeId }

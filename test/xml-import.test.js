@@ -109,3 +109,18 @@ test('all-ammo: rifle subtypes import as distinct pools, not collapsed to regula
   assert.deepEqual(rifleTypes,
     ['apds', 'apds_caseless', 'explosive', 'flechette', 'gel', 'regular', 'stick_n_shock']);
 });
+
+test('S4T0: a catalog supplies attack ratings on import', () => {
+  const catalog = {
+    weapons: {
+      fn_har: {
+        name: 'FN HAR', magazineCapacity: 35, ammoCategory: 'ammo_rifles',
+        firingModes: ['SA'], attackRating: [3, 11, 10, 6, 1],
+      },
+    },
+  };
+  const c = parseSr6CharDoc(load('S4T0.xml'), catalog, 'en');
+  assert.deepEqual(c.weapons.find((w) => w.ref === 'fn_har').attackRating, [3, 11, 10, 6, 1]);
+  // A ref the catalog does not know stays unrated, ready for backfill or editing.
+  assert.deepEqual(c.weapons.find((w) => w.ref === 'ares_predator_vi').attackRating, [0, 0, 0, 0, 0]);
+});

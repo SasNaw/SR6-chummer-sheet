@@ -144,6 +144,18 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 }
 .suggest-item:last-child { border-bottom: none; }
 .suggest-item:hover, .suggest-item.active { background: var(--accent); color: var(--accent-ink); }
+/* Attack rating row on the weapon card: five range bands, mono so the numbers
+   line up across stacked cards. A dash means no rating at that range. */
+.ar { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.ar-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ar-vals { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+
+/* Attack-rating dialog: the five bands side by side, wrapping on narrow phones. */
+.ar-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.ar-fields .field { gap: 4px; }
+.ar-fields .muted { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.ar-fields input { text-align: center; padding-left: 4px; padding-right: 4px; }
+
 .hint { color: var(--accent); font-size: 13px; min-height: 18px; }
 
 /* Spirit card: 4-column stat table (last row = Magic / Essence / condition

@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync, mkdi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DOMParser } from '@xmldom/xmldom';
+import { parseAttackRating } from '../js/catalog.js';
 
 const HOME = process.env.HOME;
 const JAR = process.env.GENESIS_JAR
@@ -131,6 +132,7 @@ eachDataFile((f, path, book) => {
       magazineCapacity: mag,
       reload: (ammoStr.match(/\(([^)]+)\)/) || [, null])[1], // c/m/b/d (clip/magazine/break/drum)
       firingModes: modes,
+      attackRating: parseAttackRating(attr(weapon, 'attack')),
       source: book,
     };
   }
