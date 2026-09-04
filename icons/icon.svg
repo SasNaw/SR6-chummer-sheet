@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- SR6 Ammo Tracker app icon — the single source of truth for every PNG in
+       this directory. An open grimoire under a smartgun reticle: magic and
+       gunplay, the two halves of a Shadowrun character sheet.
+
+       Palette matches the CSS custom properties in css/styles.css (bg #0a0d12,
+       accent #ffb000). The reticle is drawn twice: a wide #0a0d12 "knockout"
+       pass first, then the amber pass, so it reads as a HUD element floating
+       in front of the book instead of merging with the pages.
+
+       Everything visible lives in <g id="art">; tools/build-icons.mjs extracts
+       that group verbatim to derive the padded maskable variant. If you move a
+       shape out of the group it will silently vanish from the maskable icon.
+       Regenerate the PNGs with: node tools/build-icons.mjs -->
+  <rect width="512" height="512" fill="#0a0d12"/>
+  <g id="art">
+    <!-- open book: two page-fans meeting at a centre gutter -->
+    <path d="M 256 330 Q 165 292 74 300 L 74 404 Q 165 396 256 428 Z" fill="#ffb000"/>
+    <path d="M 256 330 Q 347 292 438 300 L 438 404 Q 347 396 256 428 Z" fill="#ffb000"/>
+    <path d="M 96 332 L 232 354" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 96 356 L 232 378" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 96 380 L 232 402" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 416 332 L 280 354" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 416 356 L 280 378" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 416 380 L 280 402" stroke="#0a0d12" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <rect x="249" y="322" width="14" height="114" rx="6" fill="#0a0d12"/>
+    <!-- reticle, knockout pass -->
+    <circle cx="256" cy="208" r="94" fill="none" stroke="#0a0d12" stroke-width="34"/>
+    <path d="M 256 62 L 256 140" fill="none" stroke="#0a0d12" stroke-width="34" stroke-linecap="round"/>
+    <path d="M 256 276 L 256 316" fill="none" stroke="#0a0d12" stroke-width="34" stroke-linecap="round"/>
+    <path d="M 110 208 L 188 208" fill="none" stroke="#0a0d12" stroke-width="34" stroke-linecap="round"/>
+    <path d="M 324 208 L 402 208" fill="none" stroke="#0a0d12" stroke-width="34" stroke-linecap="round"/>
+    <!-- reticle, amber pass -->
+    <circle cx="256" cy="208" r="94" fill="none" stroke="#ffb000" stroke-width="14"/>
+    <path d="M 256 62 L 256 140" fill="none" stroke="#ffb000" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 256 276 L 256 316" fill="none" stroke="#ffb000" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 110 208 L 188 208" fill="none" stroke="#ffb000" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 324 208 L 402 208" fill="none" stroke="#ffb000" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="256" cy="208" r="28" fill="#0a0d12"/>
+    <circle cx="256" cy="208" r="16" fill="#ffb000"/>
+  </g>
+</svg>

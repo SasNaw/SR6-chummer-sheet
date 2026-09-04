@@ -1,4 +1,4 @@
-const CACHE = 'sr6-ammo-v22';
+const CACHE = 'sr6-ammo-v24';
 const ASSETS = [
   '.', 'index.html', 'manifest.webmanifest', 'css/styles.css',
   'js/app.js', 'js/store.js', 'js/model.js', 'js/util.js', 'js/i18n.js', 'js/catalog.js', 'js/spirit-catalog.js',
@@ -6,7 +6,8 @@ const ASSETS = [
   'js/ui/dom.js', 'js/ui/character-picker.js', 'js/ui/character-sheet.js', 'js/ui/io.js',
   'js/ui/sheet-common.js', 'js/ui/weapon-card.js', 'js/ui/modals.js', 'js/ui/spirit-card.js',
   'js/firing-modes.js',
-  'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
 ];
 
 self.addEventListener('install', (e) => {
