@@ -3,8 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0e14" />
+  <meta name="theme-color" content="#0a0d12" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <!-- iOS ignores the manifest's icons entirely; without apple-touch-icon it
+       puts a screenshot of the page on the home screen instead. -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <title>SR6 Ammo Tracker</title>
 </head>
