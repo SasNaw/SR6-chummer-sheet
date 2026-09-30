@@ -5,7 +5,7 @@ import { updateCharacter, catName, typeNameL, droneNames } from './sheet-common.
 import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
-import { openAddWeaponModal, openAddDroneModal, openAddPoolModal, openAddSpiritModal } from './modals.js';
+import { openWeaponModal, openAddDroneModal, openAddPoolModal, openAddSpiritModal } from './modals.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -87,7 +87,7 @@ export function renderSheet(container, characterId) {
       magical ? tabBtn('magic', t('magic')) : null,
     ]),
     tab === 'weapons'
-      ? el('button', { onclick: () => openAddWeaponModal(c, 'carried') }, t('addWeapon'))
+      ? el('button', { onclick: () => openWeaponModal(c, { mount: 'carried' }) }, t('addWeapon'))
       : null,
   ]));
 
@@ -150,7 +150,7 @@ function weaponsTab(container, c) {
       droneChildren.push(el('div', { class: 'row spread' }, [
         el('span', { class: 'subgroup-title' }, name),
         el('div', { class: 'row' }, [
-          el('button', { onclick: () => openAddWeaponModal(c, name) }, t('addWeapon')),
+          el('button', { onclick: () => openWeaponModal(c, { mount: name }) }, t('addWeapon')),
           el('button', {
             class: 'icon danger', title: t('deleteDrone'),
             onclick: () => {

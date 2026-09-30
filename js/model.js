@@ -46,6 +46,33 @@ export function setAttackRating(weapon, values) {
   return { ...weapon, attackRating: normalizeAttackRating(values) };
 }
 
+// Attack-rating text fields in the weapon dialog. A band without a rating is
+// written "-"; 0 means the same thing and is always shown as "-".
+//
+// Live-cleans what the user typed: digits only, leading zeros dropped, and any
+// dash (or an all-zero value) collapses to "-". A digit typed over the dash
+// replaces it ("-5" -> "5"); a dash typed after digits clears to "-".
+export function sanitizeArInput(raw) {
+  const s = String(raw ?? '');
+  const digits = s.replace(/[^0-9]/g, '');
+  const dashAt = s.search(/[-\u2013\u2014]/);
+  if (dashAt !== -1 && !(dashAt === 0 && digits)) return '-';
+  if (!digits) return '';
+  const trimmed = digits.replace(/^0+/, '');
+  return trimmed || '-';
+}
+
+// The stored value of an attack-rating field: its number, or 0 for "-"/blank.
+export function parseArInput(text) {
+  const n = parseInt(text, 10);
+  return Number.isInteger(n) && n > 0 ? n : 0;
+}
+
+// The field text for a stored band value.
+export function formatArInput(value) {
+  return value > 0 ? String(value) : '-';
+}
+
 // Fill in attack ratings for weapons that have none, from the loaded catalog:
 // by catalog `ref` first, then by an exact match on either localized catalog
 // name. A weapon with any non-zero band is left alone, so a value someone edited
@@ -124,6 +151,15 @@ function reserveIndex(reserves, ammoCategory, ammoType) {
   return reserves.findIndex((r) => r.ammoCategory === ammoCategory && r.ammoType === ammoType);
 }
 
+// Adds `count` rounds back to the (category, type) pool in `reserves` (a copy
+// owned by the caller), creating the pool when it does not exist.
+function returnToPool(reserves, ammoCategory, ammoType, count) {
+  if (count <= 0) return;
+  const idx = reserveIndex(reserves, ammoCategory, ammoType);
+  if (idx === -1) reserves.push({ ammoCategory, ammoType, count });
+  else reserves[idx] = { ...reserves[idx], count: reserves[idx].count + count };
+}
+
 export function reload(character, weaponId, chosenType) {
   const wIdx = character.weapons.findIndex((x) => x.id === weaponId);
   if (wIdx === -1) return character;
@@ -134,12 +170,7 @@ export function reload(character, weaponId, chosenType) {
 
   let loaded = { ...weapon.loaded };
   if (loaded.count > 0 && loaded.ammoType !== chosenType) {
-    const backIdx = reserveIndex(reserves, weapon.ammoCategory, loaded.ammoType);
-    if (backIdx === -1) {
-      reserves.push({ ammoCategory: weapon.ammoCategory, ammoType: loaded.ammoType, count: loaded.count });
-    } else {
-      reserves[backIdx] = { ...reserves[backIdx], count: reserves[backIdx].count + loaded.count };
-    }
+    returnToPool(reserves, weapon.ammoCategory, loaded.ammoType, loaded.count);
     loaded = { ...loaded, count: 0 };
   }
 
@@ -181,6 +212,40 @@ export function removeReserve(character, ammoCategory, ammoType) {
 
 export function addWeapon(character, weapon) {
   return { ...character, weapons: [...character.weapons, { ...weapon }] };
+}
+
+// Applies the weapon dialog's edits (name, alias, ammoCategory, magazineCapacity,
+// attackRating, firingModes) and keeps the loaded ammo consistent:
+// - a new weapon type unloads every round back into its old pool and switches the
+//   loaded type to one this weapon type has a reserve for (else 'regular');
+// - a capacity below the loaded count returns the excess rounds to their pool.
+// Returned rounds create their pool when none exists (as reload does).
+export function editWeapon(character, weaponId, changes) {
+  const w = character.weapons.find((x) => x.id === weaponId);
+  if (!w) return character;
+  const reserves = character.reserves.map((r) => ({ ...r }));
+  const next = {
+    ...w, ...changes,
+    attackRating: normalizeAttackRating(changes.attackRating ?? w.attackRating),
+    firingModes: (changes.firingModes ?? w.firingModes).map((m) => ({ ...m })),
+  };
+  let loaded = { ...w.loaded };
+
+  if (next.ammoCategory !== w.ammoCategory) {
+    returnToPool(reserves, w.ammoCategory, loaded.ammoType, loaded.count);
+    const pool = reserves.find((r) => r.ammoCategory === next.ammoCategory);
+    loaded = { ammoType: pool ? pool.ammoType : 'regular', count: 0 };
+  } else if (loaded.count > next.magazineCapacity) {
+    returnToPool(reserves, w.ammoCategory, loaded.ammoType, loaded.count - next.magazineCapacity);
+    loaded = { ...loaded, count: next.magazineCapacity };
+  }
+
+  next.loaded = loaded;
+  return {
+    ...character,
+    reserves,
+    weapons: character.weapons.map((x) => (x.id === weaponId ? next : x)),
+  };
 }
 
 export function updateWeapon(character, weaponId, changes) {
