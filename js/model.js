@@ -281,6 +281,28 @@ export function normalizeDrone(d) {
   return typeof d === 'string' ? createDrone({ name: d }) : d;
 }
 
+// Upgrades a character's stored drones to the current shape: legacy name strings
+// become objects, and an early drone format that grouped identical drones
+// ({ count: n }) is split into n drones named "Name 1" … "Name n". The first
+// keeps the original id, and weapons mounted on the group move to it.
+export function normalizeCharacterDrones(character) {
+  if (!Array.isArray(character.drones)) return character;
+  const renamed = new Map();
+  const drones = character.drones.map(normalizeDrone).flatMap((d) => {
+    const { count, ...drone } = d;
+    const n = Number.isInteger(count) ? count : 1;
+    if (n <= 1) return [drone];
+    renamed.set(drone.name, `${drone.name} 1`);
+    return Array.from({ length: n }, (_, i) => ({
+      ...drone, id: i === 0 ? drone.id : newId(), name: `${drone.name} ${i + 1}`,
+    }));
+  });
+  const weapons = renamed.size && Array.isArray(character.weapons)
+    ? character.weapons.map((w) => (renamed.has(w.mount) ? { ...w, mount: renamed.get(w.mount) } : w))
+    : character.weapons;
+  return { ...character, drones, weapons };
+}
+
 // Appends a drone (a name or a drone object); no-op for an empty or taken name.
 export function addDrone(character, droneOrName) {
   const drone = normalizeDrone(droneOrName);
