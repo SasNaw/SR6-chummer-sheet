@@ -196,12 +196,17 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* Optional-power count when more are selected than the Force allows (Save is blocked). */
 .over-cap { color: var(--danger); }
 
-/* Spirit services — bottom-right counter; label sits right next to it. */
-.spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }
-.spirit-services .services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
-.services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+/* Spirit card bottom block: condition monitor (2/3) | services (1/3). Headings
+   share the first row; boxes (left, wrapping) and the counter (right) the second.
+   The counter is compacted so it fits a third of a phone-width card. */
+.spirit-trackers { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+.services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); font-size: 13px; }
+.services-label.end { text-align: right; }
+.spirit-services { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; align-items: center; }
+.spirit-services button.icon { min-width: 34px; width: 34px; min-height: 34px; height: 34px; padding: 0; }
+.spirit-services .count { font-size: 24px; min-width: 1.2em; text-align: center; }
 
-/* Condition monitor: a row of tappable boxes that wraps on narrow screens. */
+/* Condition monitor: tappable boxes that wrap onto as many rows as needed. */
 .cm-boxes { display: flex; flex-wrap: wrap; gap: 6px; }
 .cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
 .cm-box.filled { background: var(--accent); border-color: var(--accent); }

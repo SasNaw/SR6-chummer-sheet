@@ -88,22 +88,19 @@ export function spiritCard(c, spirit) {
     pairLine(t('weaknessesLabel'), spirit.weaknesses, lang),
   ]) { if (line) card.append(line); }
 
-  // Services counter — bottom-right of the card.
-  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
-  card.append(el('div', { class: 'row spirit-services' }, [
-    el('span', { class: 'services-label' }, t('services')),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
-    el('span', { class: 'count' }, String(spirit.services)),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
-  ]));
-
+  // Bottom block, two columns (2/3 | 1/3): the condition monitor on the left and
+  // services on the right, headings on one line and their controls below —
+  // boxes left-aligned (wrapping onto more rows as needed), counter right-aligned.
+  //
   // Condition monitor: one box per point, filled left to right. Clicking an
   // empty box fills up to it; clicking a filled box clears it and everything
   // to its right (damageAfterBoxClick).
   const boxes = spiritConditionMonitor(spirit);
   const damage = Math.min(spirit.damage ?? 0, boxes);
-  card.append(el('div', { class: 'field' }, [
+  const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
+  card.append(el('div', { class: 'spirit-trackers' }, [
     el('span', { class: 'services-label' }, t('conditionMonitor')),
+    el('span', { class: 'services-label end' }, t('services')),
     el('div', { class: 'cm-boxes', role: 'group', 'aria-label': t('conditionMonitor') },
       Array.from({ length: boxes }, (_, i) => {
         const box = i + 1;
@@ -114,6 +111,11 @@ export function spiritCard(c, spirit) {
           onclick: () => updateCharacter(c.id, (ch) => setSpiritDamage(ch, spirit.id, damageAfterBoxClick(damage, box))),
         });
       })),
+    el('div', { class: 'row spirit-services', 'aria-label': t('services') }, [
+      el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
+      el('span', { class: 'count' }, String(spirit.services)),
+      el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+    ]),
   ]));
 
   return card;
