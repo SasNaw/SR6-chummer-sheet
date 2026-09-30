@@ -165,12 +165,15 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .ar-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
 .ar-vals { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
 
+/* Card header, for every card with a title and action buttons (weapon, spirit,
+   and any future card): the title takes the free width and wraps; the buttons
+   (edit, then delete) stay together on the right; the title is vertically
+   centred on the buttons. */
+.card-head { flex-wrap: nowrap; align-items: center; }
+.card-head h2 { min-width: 0; overflow-wrap: anywhere; }
+.card-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
+
 /* Attack-rating dialog: the five bands side by side, wrapping on narrow phones. */
-/* Weapon card header: the name takes the free width and wraps; edit + delete
-   stay together on the right. */
-.weapon-head { flex-wrap: nowrap; align-items: flex-start; }
-.weapon-head h2 { min-width: 0; overflow-wrap: anywhere; }
-.weapon-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
 .ar-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .ar-fields .field { gap: 4px; }
 .ar-fields .muted { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }

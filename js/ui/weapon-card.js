@@ -20,7 +20,7 @@ export function weaponCard(c, w, { stashable = false } = {}) {
   const card = el('div', { class: 'card' });
 
   // Header: name on the left; edit (the full weapon dialog) then delete on the right.
-  card.append(el('div', { class: 'row spread weapon-head' }, [
+  card.append(el('div', { class: 'row spread card-head' }, [
     el('h2', {}, weaponDisplayName(w)),
     el('div', { class: 'row' }, [
       el('button', { class: 'icon', title: t('editWeapon'), onclick: () => openWeaponModal(c, { weapon: w }) }, '✎'),

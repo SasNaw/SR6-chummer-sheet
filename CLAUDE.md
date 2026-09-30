@@ -89,6 +89,11 @@ mutate(fn):  state = fn(state)  →  saveState(state)  →  render()
 - **Weapon lookup is intentionally sparse.** `weapons-db.js` seeds only a few weapons
   with real magazine/firing-mode data; unknown XML refs fall back to a prettified name +
   placeholder magazine + default `SS/SA` modes, all editable in the UI.
+- **Card headers use `.card-head`.** Every card with a title and action buttons
+  (weapon, spirit, and any new card) builds its header as
+  `row spread card-head` → `h2` title + a `.row` of buttons, **edit (✎) first,
+  then delete (🗑)**, on the right. The title is vertically centred on the
+  buttons and wraps instead of pushing them onto a new line.
 - **Service worker asset list must stay in sync.** `sw.js` precaches an explicit
   `ASSETS` array; `cache.addAll` fails atomically if any listed path 404s. When you add,
   rename, or remove a JS/CSS/asset file, update `ASSETS` and bump the `CACHE` version
