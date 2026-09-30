@@ -42,14 +42,17 @@ function droneMeta(drone) {
   return parts.join(' · ');
 }
 
-// Stat grid (2 columns × 4 rows, room for full labels) for a drone that has a
-// stats snapshot.
+// Stat grid for a drone that has a stats snapshot: two "Label: value" pairs per
+// row, laid out as four grid columns (label | value | label | value). Each label
+// column is as wide as its widest label, so every value sits right after its
+// label and the values line up vertically — the spirit card's look, with full
+// words instead of three-letter abbreviations.
 function droneStats(drone) {
   const labels = STAT_LABELS[uiLang()] || STAT_LABELS.en;
-  return el('div', { class: 'drone-stats' }, labels.map(([key, label]) => el('div', { class: 'stat' }, [
-    el('span', { class: 'stat-label' }, label),
+  return el('div', { class: 'drone-stats' }, labels.flatMap(([key, label]) => [
+    el('span', { class: 'stat-label' }, `${label}:`),
     el('span', { class: 'stat-val' }, String(drone.stats[key] ?? '–')),
-  ])));
+  ]));
 }
 
 // Read-only drone card for the Drones tab: name, summary line, and the stat grid
@@ -57,7 +60,9 @@ function droneStats(drone) {
 export function droneCard(drone) {
   const meta = droneMeta(drone);
   return el('div', { class: 'card' }, [
-    el('h2', {}, drone.name),
+    // Shared card header (see .card-head): title vertically centred, room for
+    // edit/delete buttons on the right once drone cards get them.
+    el('div', { class: 'row spread card-head' }, [el('h2', {}, drone.name)]),
     meta ? el('div', { class: 'muted' }, meta) : null,
     drone.stats ? droneStats(drone) : el('div', { class: 'hint' }, t('noDroneStats')),
   ].filter(Boolean));
