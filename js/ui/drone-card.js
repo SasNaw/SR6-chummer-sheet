@@ -1,6 +1,7 @@
 import { el } from './dom.js';
 import { localizedPair } from '../spirit-catalog.js';
 import { uiLang } from './sheet-common.js';
+import { t } from '../app.js';
 
 // Short stat labels (display order) with the full name as a tooltip. Kept here,
 // the only consumer, rather than as i18n keys (same approach as spirit-card).
@@ -29,7 +30,7 @@ const SUBTYPE_LABELS = {
 // One-line summary under the drone name: "Steel Lynx Combat Drone · Large · Ground · ×2".
 // The type name is omitted when the drone's name already is that type name.
 // Returns '' when there is nothing to add.
-export function droneMeta(drone) {
+function droneMeta(drone) {
   const lang = uiLang();
   const typeLabel = localizedPair(drone.typeName, lang);
   const parts = [
@@ -42,10 +43,21 @@ export function droneMeta(drone) {
 }
 
 // Stat grid (4 columns × 2 rows) for a drone that has a stats snapshot.
-export function droneStats(drone) {
+function droneStats(drone) {
   const labels = STAT_LABELS[uiLang()] || STAT_LABELS.en;
   return el('div', { class: 'drone-stats' }, labels.map(([key, short, full]) => el('div', { class: 'stat', title: full }, [
     el('span', { class: 'stat-label' }, `${short}: `),
     el('span', { class: 'stat-val' }, String(drone.stats[key] ?? '–')),
   ])));
+}
+
+// Read-only drone card for the Drones tab: name, summary line, and the stat grid
+// (or a hint when the drone has no stats snapshot).
+export function droneCard(drone) {
+  const meta = droneMeta(drone);
+  return el('div', { class: 'card' }, [
+    el('h2', {}, drone.name),
+    meta ? el('div', { class: 'muted' }, meta) : null,
+    drone.stats ? droneStats(drone) : el('div', { class: 'hint' }, t('noDroneStats')),
+  ].filter(Boolean));
 }

@@ -103,8 +103,9 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
    section ticks, accent buttons) recolour from amber to blue automatically. */
 .sheet { display: grid; gap: 18px; }
 .theme-magic { --accent: #4d9bff; --accent-ink: #03142e; }
+.theme-drones { --accent: #5fd068; --accent-ink: #04170a; }
 
-/* Section tabs (Weapons / Magic) — clickable top-level headers. The active tab
+/* Section tabs (Weapons / Drones / Magic) — clickable top-level headers. The active tab
    carries the accent marker that elsewhere signals "this is the live header". */
 .tabs { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
 .tablist { display: flex; gap: 24px; align-items: center; }
@@ -227,11 +228,7 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .cm-box.filled { background: var(--accent); border-color: var(--accent); }
 
 /* Drone stats — same cell style as spirits, four columns × two rows. */
-.drone-row { flex-wrap: nowrap; align-items: flex-start; }
-.drone-row > .row { flex-shrink: 0; flex-wrap: nowrap; }
-.drone-head { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.drone-meta { font-size: 12px; }
-.drone-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 24px; margin: 4px 0 8px; }
+.drone-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; }
 
 
 /* Inline -/value/+ stepper (modal numeric fields) */

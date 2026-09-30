@@ -71,6 +71,7 @@ export const STRINGS = {
     droneCatalogLoaded: (n) => `Loaded ${n} drones.`,
     droneCatalogInvalid: 'That file is not a drone catalog.',
     clearDroneCatalogConfirm: 'Clear the loaded drone catalog?',
+    noDroneStats: 'No stats — load a drone catalog and re-import the character XML.',
     // Add-drone modal
     addDroneTitle: 'Add drone',
     droneNamePlaceholder: 'Drone name',
@@ -199,6 +200,7 @@ export const STRINGS = {
     droneCatalogLoaded: (n) => `${n} Drohnen geladen.`,
     droneCatalogInvalid: 'Diese Datei ist kein Drohnenkatalog.',
     clearDroneCatalogConfirm: 'Geladenen Drohnenkatalog löschen?',
+    noDroneStats: 'Keine Werte – Drohnenkatalog laden und Charakter-XML erneut importieren.',
     addDroneTitle: 'Drohne hinzufügen',
     droneNamePlaceholder: 'Drohnenname',
     name: 'Name',

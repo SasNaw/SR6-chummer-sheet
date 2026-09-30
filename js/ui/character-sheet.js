@@ -6,7 +6,7 @@ import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
 import { openWeaponModal, openAddDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
-import { droneStats, droneMeta } from './drone-card.js';
+import { droneCard } from './drone-card.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -56,7 +56,7 @@ function reserveSection(c) {
   return wrap;
 }
 
-// Which top-level tab (weapons | magic) is showing, and for which character.
+// Which top-level tab (weapons | drones | magic) is showing, and for which character.
 // View-only state: it resets to weapons when a different character is opened, and
 // survives the full re-render on each mutation. Not persisted.
 let activeTab = 'weapons';
@@ -68,8 +68,11 @@ export function renderSheet(container, characterId) {
 
   if (characterId !== activeTabCharId) { activeTab = 'weapons'; activeTabCharId = characterId; }
   const magical = !!c.magic;
-  // The Magic tab only exists for magical characters; fall back to weapons otherwise.
-  const tab = (magical && activeTab === 'magic') ? 'magic' : 'weapons';
+  const hasDrones = (c.drones ?? []).length > 0;
+  // The Magic tab only exists for magical characters and the Drones tab only for
+  // characters with drones; fall back to weapons otherwise.
+  const tab = (magical && activeTab === 'magic') ? 'magic'
+    : (hasDrones && activeTab === 'drones') ? 'drones' : 'weapons';
 
   const tabBtn = (id, label) => el('button', {
     class: id === tab ? 'tab active' : 'tab',
@@ -78,13 +81,16 @@ export function renderSheet(container, characterId) {
   }, label);
 
   // The whole sheet is colour-themed by section: weapons keeps the amber accent,
-  // magic re-points --accent to blue so every accent-derived element recolours.
-  const sheet = el('div', { class: tab === 'magic' ? 'sheet theme-magic' : 'sheet' });
+  // magic re-points --accent to blue and drones to green, so every accent-derived
+  // element recolours.
+  const theme = { magic: ' theme-magic', drones: ' theme-drones' }[tab] || '';
+  const sheet = el('div', { class: `sheet${theme}` });
 
   // Clickable section tabs. The contextual + Weapon action shows on the Weapons tab.
   sheet.append(el('div', { class: 'tabs' }, [
     el('div', { class: 'tablist', role: 'tablist' }, [
       tabBtn('weapons', t('weapons')),
+      hasDrones ? tabBtn('drones', t('drones')) : null,
       magical ? tabBtn('magic', t('magic')) : null,
     ]),
     tab === 'weapons'
@@ -94,11 +100,21 @@ export function renderSheet(container, characterId) {
 
   if (tab === 'magic') {
     magicTab(sheet, c);
+  } else if (tab === 'drones') {
+    dronesTab(sheet, c);
   } else {
     weaponsTab(sheet, c);
   }
 
   container.append(sheet);
+}
+
+// Drones tab: one read-only stat card per drone. Adding/removing drones and their
+// mounted weapons stays in the Weapons tab's Drones section.
+function dronesTab(container, c) {
+  const list = el('div', { class: 'list' });
+  for (const d of c.drones) list.append(droneCard(d));
+  container.append(list);
 }
 
 function magicTab(container, c) {
@@ -148,13 +164,8 @@ function weaponsTab(container, c) {
   } else {
     for (const name of droneList) {
       const weapons = c.weapons.filter((w) => w.mount === name);
-      const drone = (c.drones ?? []).find((d) => d.name === name);
-      const meta = drone && droneMeta(drone);
-      droneChildren.push(el('div', { class: 'row spread drone-row' }, [
-        el('div', { class: 'drone-head' }, [
-          el('span', { class: 'subgroup-title' }, name),
-          meta ? el('span', { class: 'muted drone-meta' }, meta) : null,
-        ].filter(Boolean)),
+      droneChildren.push(el('div', { class: 'row spread' }, [
+        el('span', { class: 'subgroup-title' }, name),
         el('div', { class: 'row' }, [
           el('button', { onclick: () => openWeaponModal(c, { mount: name }) }, t('addWeapon')),
           el('button', {
@@ -167,7 +178,6 @@ function weaponsTab(container, c) {
           }, '🗑'),
         ]),
       ]));
-      if (drone && drone.stats) droneChildren.push(droneStats(drone));
       droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, t('noWeapons')));
     }
   }
