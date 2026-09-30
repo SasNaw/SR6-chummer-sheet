@@ -71,10 +71,14 @@ export function spiritCard(c, spirit) {
   ]));
 
   // Derived values (Force-independent notation, faithful to the source), then
-  // powers / optional powers / skills / weaknesses — one "Label: value" row each.
-  for (const line of [
+  // powers / optional powers / skills / weaknesses — one "Label: value" row each,
+  // except the two initiatives, which share a row in two equal columns.
+  const initiatives = [
     labelLine(t('initiativeLabel'), spirit.initiative),
     labelLine(t('astralInitiativeLabel'), spirit.astralInitiative),
+  ].filter(Boolean);
+  for (const line of [
+    initiatives.length ? el('div', { class: 'spirit-pair' }, initiatives) : null,
     labelLine(t('actionsLabel'), localizeSpiritText(spirit.actions, lang)),
     labelLine(t('movementLabel'), localizeSpiritText(spirit.movement, lang)),
     pairLine(t('innatePowers'), spirit.powers, lang),

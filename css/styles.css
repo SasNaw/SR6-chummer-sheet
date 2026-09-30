@@ -191,6 +191,8 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
+/* Two detail rows side by side (Initiative | Astral initiative), equal columns. */
+.spirit-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Optional-power count when more are selected than the Force allows (Save is blocked). */
 .over-cap { color: var(--danger); }
 
