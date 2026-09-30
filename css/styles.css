@@ -197,6 +197,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* Spirit attributes read "BOD: 3": value right after its label, the spacing
    goes between cells instead. */
 .spirit-stats .stat { justify-content: flex-start; gap: 4px; }
+/* Same label width everywhere (sized for the widest 3-letter label), so the
+   values line up vertically within each column. */
+.spirit-stats .stat-label { min-width: 3.4em; }
+/* Header-to-attributes gap matches the attributes-to-divider gap (12px card gap
+   + the divider's 6px margin). */
+.spirit-head { margin-bottom: 6px; }
 /* Two detail rows side by side (Initiative | Astral initiative), equal columns. */
 .spirit-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Optional-power count when more are selected than the Force allows (Save is blocked). */

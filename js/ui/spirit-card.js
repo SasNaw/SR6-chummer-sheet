@@ -41,7 +41,7 @@ export function spiritCard(c, spirit) {
 
   // Header: "Name (Type, Force: x)" on the left; edit (the spirit dialog) then
   // dismiss on the right — same layout as the weapon card.
-  card.append(el('div', { class: 'row spread weapon-head' }, [
+  card.append(el('div', { class: 'row spread weapon-head spirit-head' }, [
     el('h2', {}, display),
     el('div', { class: 'row' }, [
       el('button', { class: 'icon', title: t('editSpirit'), onclick: () => openSpiritModal(c, spirit) }, '✎'),
