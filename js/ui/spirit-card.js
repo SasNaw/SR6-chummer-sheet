@@ -71,6 +71,9 @@ export function spiritCard(c, spirit) {
     ]),
   ]));
 
+  // Divider between the attributes and the details below.
+  card.append(el('hr', { class: 'card-sep' }));
+
   // Derived values (Force-independent notation, faithful to the source), then
   // powers / optional powers / skills / weaknesses — one "Label: value" row each,
   // except the two initiatives, which share a row in two equal columns.
@@ -87,6 +90,9 @@ export function spiritCard(c, spirit) {
     pairLine(t('skillsLabel'), spirit.skills, lang),
     pairLine(t('weaknessesLabel'), spirit.weaknesses, lang),
   ]) { if (line) card.append(line); }
+
+  // Divider between the details and the trackers.
+  card.append(el('hr', { class: 'card-sep' }));
 
   // Bottom block, two columns (2/3 | 1/3): the condition monitor on the left and
   // services on the right, headings on one line and their controls below —

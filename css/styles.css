@@ -191,6 +191,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
+/* Thin divider between card sections, inset from the card edges; the extra
+   vertical margin widens the gap between sections beyond the card's 12px. */
+.card-sep { border: 0; border-top: 1px solid var(--line); margin: 6px 12px; }
+/* Spirit attributes read "BOD: 3": value right after its label, the spacing
+   goes between cells instead. */
+.spirit-stats .stat { justify-content: flex-start; gap: 4px; }
 /* Two detail rows side by side (Initiative | Astral initiative), equal columns. */
 .spirit-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Optional-power count when more are selected than the Force allows (Save is blocked). */
