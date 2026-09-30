@@ -1,11 +1,11 @@
 import { el } from './dom.js';
 import { t } from '../app.js';
 import {
-  fire, spend, addRounds, setLoaded, reload, matchingReserves, updateWeapon, removeWeapon,
+  fire, spend, addRounds, reload, matchingReserves, updateWeapon, removeWeapon,
   weaponDisplayName, expandFiringModes,
 } from '../model.js';
 import { updateCharacter, findW, catName, typeNameL, modeLabel } from './sheet-common.js';
-import { openAttackRatingModal, openAmmoSwitchModal } from './modals.js';
+import { openWeaponModal, openAmmoSwitchModal } from './modals.js';
 import { ATTACK_RATING_BANDS } from '../catalog.js';
 
 // Renders as "10 / 9 / 8 / \u2014 / \u2014". A 0 band means the weapon has no rating at
@@ -19,29 +19,22 @@ function formatAttackRating(values) {
 export function weaponCard(c, w, { stashable = false } = {}) {
   const card = el('div', { class: 'card' });
 
-  // Header: name + alias-edit button on the left, delete on the right.
-  card.append(el('div', { class: 'row spread' }, [
+  // Header: name on the left; edit (the full weapon dialog) then delete on the right.
+  card.append(el('div', { class: 'row spread weapon-head' }, [
+    el('h2', {}, weaponDisplayName(w)),
     el('div', { class: 'row' }, [
-      el('h2', {}, weaponDisplayName(w)),
-      el('button', { class: 'icon', title: t('editAlias'), onclick: () => editAlias(c, w) }, '✎'),
+      el('button', { class: 'icon', title: t('editWeapon'), onclick: () => openWeaponModal(c, { weapon: w }) }, '✎'),
+      el('button', {
+        class: 'icon danger', title: t('remove'),
+        onclick: () => { if (confirm(t('removeWeaponConfirm', weaponDisplayName(w)))) updateCharacter(c.id, (ch) => removeWeapon(ch, w.id)); },
+      }, '🗑'),
     ]),
-    el('button', {
-      class: 'icon danger', title: t('remove'),
-      onclick: () => { if (confirm(t('removeWeaponConfirm', weaponDisplayName(w)))) updateCharacter(c.id, (ch) => removeWeapon(ch, w.id)); },
-    }, '🗑'),
   ]));
 
-  // Attack rating across the five range bands, with an edit button for weapons
-  // whose mods change the printed values. 0 means "no rating at that range".
-  card.append(el('div', { class: 'row spread' }, [
-    el('div', { class: 'ar', title: t('attackRatingTitle') }, [
-      el('span', { class: 'ar-label' }, t('attackRating')),
-      el('span', { class: 'ar-vals' }, formatAttackRating(w.attackRating)),
-    ]),
-    el('button', {
-      class: 'icon', title: t('editAttackRating'),
-      onclick: () => openAttackRatingModal(c, w),
-    }, '✎'),
+  // Attack rating across the five range bands. 0 means "no rating at that range".
+  card.append(el('div', { class: 'ar', title: t('attackRatingTitle') }, [
+    el('span', { class: 'ar-label' }, t('attackRating')),
+    el('span', { class: 'ar-vals' }, formatAttackRating(w.attackRating)),
   ]));
 
   // Count + ammo-pool switcher
@@ -66,12 +59,6 @@ export function weaponCard(c, w, { stashable = false } = {}) {
   card.append(el('div', { class: 'row end' }, [
     el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, spend(findW(ch, w.id), 1))) }, '−'),
     el('button', { class: 'icon', onclick: () => updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, addRounds(findW(ch, w.id), 1))) }, '+'),
-    el('button', {
-      onclick: () => {
-        const n = parseInt(prompt(t('setLoadedPrompt'), String(w.loaded.count)) ?? '', 10);
-        if (Number.isInteger(n)) updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, setLoaded(findW(ch, w.id), n)));
-      },
-    }, t('set')),
     el('button', { class: 'accent', onclick: () => doReload(c, w) }, t('reload')),
   ]));
 
@@ -115,12 +102,4 @@ function doReload(c, w) {
     return;
   }
   updateCharacter(c.id, (ch) => reload(ch, w.id, w.loaded.ammoType));
-}
-
-// Edit only the display alias. The weapon's base name (from the catalog/import or
-// the add-weapon dialog) is fixed; the alias is shown as "Alias (Base Name)".
-function editAlias(c, w) {
-  const alias = prompt(t('aliasPrompt', w.name), w.alias || '');
-  if (alias === null) return;
-  updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, { alias: alias.trim() }));
 }

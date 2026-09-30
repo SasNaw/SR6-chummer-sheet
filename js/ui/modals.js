@@ -2,12 +2,13 @@ import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
 import {
   addReserve, createReservePool, addDrone, createWeapon, addWeapon,
-  createSpirit, addSpirit, optionalPowerCap, setAttackRating, updateWeapon,
+  createSpirit, addSpirit, optionalPowerCap, editWeapon, expandFiringModes,
+  sanitizeArInput, parseArInput, formatArInput,
   matchingReserves, reload,
 } from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
 import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
-import { updateCharacter, findW, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, modeLabel, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
+import { updateCharacter, catName, typeNameL, uiLang, STANDARD_FIRING_MODES, modeLabel, ammoCategoryIds, ammoTypeIds } from './sheet-common.js';
 
 // Build category/type <option>s sorted by their localized label.
 const byLabel = (fn) => (a, b) => fn(a).localeCompare(fn(b));
@@ -135,41 +136,6 @@ export function openAmmoSwitchModal(c, w) {
   ]);
 }
 
-// Edit a weapon's attack rating across the five SR6 range bands. Values come
-// from the catalog, but mods change them, so every band is editable. An empty
-// field saves as 0, which the card renders as an em dash.
-export function openAttackRatingModal(c, w) {
-  const bands = ['arClose', 'arNear', 'arMedium', 'arFar', 'arExtreme'];
-  const current = Array.isArray(w.attackRating) ? w.attackRating : [];
-
-  const inputs = bands.map((key, i) => {
-    const input = el('input', {
-      type: 'text', inputmode: 'numeric', 'aria-label': t(key),
-      value: current[i] > 0 ? String(current[i]) : '',
-    });
-    input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9]/g, ''); });
-    return input;
-  });
-
-  const close = openModal(t('attackRatingTitle'), [
-    el('div', { class: 'ar-fields' }, bands.map((key, i) =>
-      el('label', { class: 'field' }, [el('span', { class: 'muted' }, t(key)), inputs[i]]))),
-    el('div', { class: 'muted' }, t('arBlankHint')),
-    el('div', { class: 'row spread' }, [
-      el('button', { onclick: () => close() }, t('cancel')),
-      el('button', {
-        class: 'accent',
-        onclick: () => {
-          const values = inputs.map((n) => n.value);
-          close();
-          // setAttackRating returns a whole weapon, which updateWeapon merges.
-          updateCharacter(c.id, (ch) => updateWeapon(ch, w.id, setAttackRating(findW(ch, w.id), values)));
-        },
-      }, t('save')),
-    ]),
-  ]);
-}
-
 // Modal to add a drone: just a name. Appended to the bottom of the Drones section.
 export function openAddDroneModal(c) {
   const nameInput = el('input', { type: 'text', placeholder: t('droneNamePlaceholder') });
@@ -190,30 +156,65 @@ export function openAddDroneModal(c) {
   ]);
 }
 
-// Modal to create a weapon: name, weapon type (ammo category), capacity, and
-// toggle buttons for available firing modes. `mount` ('carried' or a drone name)
-// is set by which "+ Weapon" button opened it.
-export function openAddWeaponModal(c, mount) {
-  const nameInput = el('input', { type: 'text', placeholder: t('weaponNamePlaceholder') });
-  const typeSel = el('select', {}, categoryOptions());
-  const capInput = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: '' });
+const AR_BANDS = ['arClose', 'arNear', 'arMedium', 'arFar', 'arExtreme'];
+
+// The one weapon dialog, for both creating and editing: name, custom name
+// (alias), weapon type (ammo category), capacity, attack rating and firing-mode
+// toggles. Without `weapon` it creates a new weapon on `mount` ('carried' or a
+// drone name — set by which "+ Weapon" button opened it) and offers the catalog
+// finder; with `weapon` every field is pre-filled and Save applies the edits via
+// editWeapon (which also keeps the loaded ammo consistent).
+export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
+  const editing = Boolean(weapon);
+  const nameInput = el('input', { type: 'text', placeholder: t('weaponNamePlaceholder'), value: editing ? weapon.name : '' });
+  const aliasInput = el('input', { type: 'text', placeholder: t('aliasPlaceholder'), value: editing ? (weapon.alias || '') : '' });
+  const typeSel = el('select', {}, categoryOptions(editing && weapon.ammoCategory ? [weapon.ammoCategory] : []));
+  if (editing && weapon.ammoCategory) typeSel.value = weapon.ammoCategory;
+  const capInput = el('input', {
+    type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: editing ? String(weapon.magazineCapacity ?? '') : '',
+  });
   capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
 
+  // Attack rating: one field per range band. "-" means no rating at that range;
+  // 0 is converted to "-" as it is typed (see sanitizeArInput).
+  const arInputs = AR_BANDS.map((key, i) => {
+    const current = editing && Array.isArray(weapon.attackRating) ? weapon.attackRating[i] : 0;
+    const input = el('input', { type: 'text', inputmode: 'numeric', 'aria-label': t(key), value: formatArInput(current) });
+    input.addEventListener('input', () => { input.value = sanitizeArInput(input.value); });
+    input.addEventListener('blur', () => { if (!input.value) input.value = '-'; });
+    return input;
+  });
+  const setAr = (values) => arInputs.forEach((input, i) => { input.value = formatArInput((values || [])[i]); });
+
   // Firing-mode toggle buttons (tagged with their mode for catalog autofill).
+  // Single shot is implied by semi-auto (expandFiringModes, as on the card): while
+  // SA is selected, SS shows as selected and cannot be switched off, so the dialog
+  // always matches the buttons the card will show.
   const selected = new Set();
   const modeButtons = STANDARD_FIRING_MODES.map((m) => {
     const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${modeLabel(m.mode)} (${m.rounds})`);
     btn.addEventListener('click', () => {
-      if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
-      else { selected.add(m.mode); btn.classList.add('on'); }
+      if (btn.classList.contains('locked')) return;
+      if (selected.has(m.mode)) selected.delete(m.mode); else selected.add(m.mode);
+      syncModes();
     });
     return btn;
   });
-  const setMode = (mode, on) => {
-    const btn = modeButtons.find((b) => b.getAttribute('data-mode') === mode);
-    if (!btn) return;
-    if (on) { selected.add(mode); btn.classList.add('on'); } else { selected.delete(mode); btn.classList.remove('on'); }
-  };
+  const effectiveModes = () => new Set(expandFiringModes([...selected]).map((m) => m.mode));
+  function syncModes() {
+    const effective = effectiveModes();
+    for (const btn of modeButtons) {
+      const mode = btn.getAttribute('data-mode');
+      const locked = mode === 'SS' && selected.has('SA');
+      btn.classList.toggle('on', effective.has(mode));
+      btn.classList.toggle('locked', locked);
+      btn.setAttribute('aria-pressed', effective.has(mode) ? 'true' : 'false');
+      if (locked) btn.setAttribute('title', t('singleShotImplied')); else btn.removeAttribute('title');
+    }
+  }
+  const setMode = (mode, on) => { if (on) selected.add(mode); else selected.delete(mode); syncModes(); };
+  if (editing) for (const m of weapon.firingModes || []) selected.add(typeof m === 'string' ? m : m.mode);
+  syncModes();
 
   const fields = [];
   let picked = null; // the catalog entry, when the weapon came from the picker
@@ -225,7 +226,9 @@ export function openAddWeaponModal(c, mount) {
   // 8+, which is what an installed PWA can end up running in. Since this app is
   // mobile-first, the suggestion list is plain DOM we render ourselves, so it
   // behaves identically on every engine.
-  const catalog = getCatalog();
+  // Only when creating: picking a catalog weapon while editing would overwrite
+  // values already adjusted for mods.
+  const catalog = editing ? null : getCatalog();
   if (catalog) {
     const entries = catalogWeaponList(catalog, uiLang());
     const byLabel = new Map(entries.map((e) => [e.label, e]));
@@ -256,6 +259,7 @@ export function openAddWeaponModal(c, mount) {
         typeSel.value = e.ammoCategory;
       }
       for (const m of STANDARD_FIRING_MODES) setMode(m.mode, (e.firingModes || []).includes(m.mode));
+      setAr(e.attackRating);
     };
 
     function closeList() {
@@ -330,31 +334,41 @@ export function openAddWeaponModal(c, mount) {
 
   fields.push(
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
+    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('customName')), aliasInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('weaponType')), typeSel]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('maxAmmoCapacity')), capInput]),
+    el('div', { class: 'field' }, [
+      el('span', { class: 'muted' }, t('attackRatingTitle')),
+      el('div', { class: 'ar-fields' }, AR_BANDS.map((key, i) =>
+        el('label', { class: 'field' }, [el('span', { class: 'muted' }, t(key)), arInputs[i]]))),
+    ]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('firingModes')), el('div', { class: 'modes' }, modeButtons)]),
     el('div', { class: 'row spread' }, [
       el('button', { onclick: () => close() }, t('cancel')),
       el('button', {
         class: 'accent',
         onclick: () => {
-          const weapon = createWeapon({
-            name: nameInput.value.trim() || 'New Weapon',
-            ref: (picked && picked.id) || '',
-            attackRating: (picked && picked.attackRating) || [],
+          const values = {
+            name: nameInput.value.trim() || (editing ? weapon.name : 'New Weapon'),
+            alias: aliasInput.value.trim(),
             ammoCategory: typeSel.value,
             magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
-            mount,
-            firingModes: STANDARD_FIRING_MODES.filter((m) => selected.has(m.mode)).map((m) => ({ ...m })),
-          });
+            attackRating: arInputs.map((input) => parseArInput(input.value)),
+            firingModes: STANDARD_FIRING_MODES.filter((m) => effectiveModes().has(m.mode)).map((m) => ({ ...m })),
+          };
           close();
-          updateCharacter(c.id, (ch) => addWeapon(ch, weapon));
+          if (editing) {
+            updateCharacter(c.id, (ch) => editWeapon(ch, weapon.id, values));
+          } else {
+            const created = createWeapon({ ...values, ref: (picked && picked.id) || '', mount });
+            updateCharacter(c.id, (ch) => addWeapon(ch, created));
+          }
         },
-      }, t('add')),
+      }, editing ? t('save') : t('add')),
     ]),
   );
 
-  const close = openModal(t('addWeaponTitle'), fields);
+  const close = openModal(editing ? t('editWeaponTitle') : t('addWeaponTitle'), fields);
 }
 
 // Modal to summon a spirit from the loaded spirit catalog: name, type, Force, and

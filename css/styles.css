@@ -123,6 +123,8 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .carried-toggle input { width: auto; min-height: 0; }
 
 .toggle.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+/* Selected because another mode implies it (SS with SA): shown on, but not toggleable. */
+.toggle.on.locked { opacity: 0.6; cursor: default; }
 .ammo-empty { color: var(--danger); border-color: var(--danger); }
 /* Currently-chambered ammo type, shown beside the round count (the switch
    control is now a button, so it no longer carries this itself). Baseline
@@ -163,6 +165,11 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .ar-vals { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
 
 /* Attack-rating dialog: the five bands side by side, wrapping on narrow phones. */
+/* Weapon card header: the name takes the free width and wraps; edit + delete
+   stay together on the right. */
+.weapon-head { flex-wrap: nowrap; align-items: flex-start; }
+.weapon-head h2 { min-width: 0; overflow-wrap: anywhere; }
+.weapon-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
 .ar-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .ar-fields .field { gap: 4px; }
 .ar-fields .muted { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
