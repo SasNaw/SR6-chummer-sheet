@@ -2,7 +2,7 @@ import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
 import {
   addReserve, createReservePool, addDrone, createWeapon, addWeapon,
-  createSpirit, addSpirit, optionalPowerCap, editWeapon,
+  createSpirit, addSpirit, optionalPowerCap, editWeapon, expandFiringModes,
   sanitizeArInput, parseArInput, formatArInput,
   matchingReserves, reload,
 } from '../model.js';
@@ -187,21 +187,34 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
   const setAr = (values) => arInputs.forEach((input, i) => { input.value = formatArInput((values || [])[i]); });
 
   // Firing-mode toggle buttons (tagged with their mode for catalog autofill).
+  // Single shot is implied by semi-auto (expandFiringModes, as on the card): while
+  // SA is selected, SS shows as selected and cannot be switched off, so the dialog
+  // always matches the buttons the card will show.
   const selected = new Set();
   const modeButtons = STANDARD_FIRING_MODES.map((m) => {
     const btn = el('button', { type: 'button', class: 'toggle', 'data-mode': m.mode }, `${modeLabel(m.mode)} (${m.rounds})`);
     btn.addEventListener('click', () => {
-      if (selected.has(m.mode)) { selected.delete(m.mode); btn.classList.remove('on'); }
-      else { selected.add(m.mode); btn.classList.add('on'); }
+      if (btn.classList.contains('locked')) return;
+      if (selected.has(m.mode)) selected.delete(m.mode); else selected.add(m.mode);
+      syncModes();
     });
     return btn;
   });
-  const setMode = (mode, on) => {
-    const btn = modeButtons.find((b) => b.getAttribute('data-mode') === mode);
-    if (!btn) return;
-    if (on) { selected.add(mode); btn.classList.add('on'); } else { selected.delete(mode); btn.classList.remove('on'); }
-  };
-  if (editing) for (const m of weapon.firingModes || []) setMode(typeof m === 'string' ? m : m.mode, true);
+  const effectiveModes = () => new Set(expandFiringModes([...selected]).map((m) => m.mode));
+  function syncModes() {
+    const effective = effectiveModes();
+    for (const btn of modeButtons) {
+      const mode = btn.getAttribute('data-mode');
+      const locked = mode === 'SS' && selected.has('SA');
+      btn.classList.toggle('on', effective.has(mode));
+      btn.classList.toggle('locked', locked);
+      btn.setAttribute('aria-pressed', effective.has(mode) ? 'true' : 'false');
+      if (locked) btn.setAttribute('title', t('singleShotImplied')); else btn.removeAttribute('title');
+    }
+  }
+  const setMode = (mode, on) => { if (on) selected.add(mode); else selected.delete(mode); syncModes(); };
+  if (editing) for (const m of weapon.firingModes || []) selected.add(typeof m === 'string' ? m : m.mode);
+  syncModes();
 
   const fields = [];
   let picked = null; // the catalog entry, when the weapon came from the picker
@@ -341,7 +354,7 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
             ammoCategory: typeSel.value,
             magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
             attackRating: arInputs.map((input) => parseArInput(input.value)),
-            firingModes: STANDARD_FIRING_MODES.filter((m) => selected.has(m.mode)).map((m) => ({ ...m })),
+            firingModes: STANDARD_FIRING_MODES.filter((m) => effectiveModes().has(m.mode)).map((m) => ({ ...m })),
           };
           close();
           if (editing) {
