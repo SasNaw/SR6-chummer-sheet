@@ -2,8 +2,10 @@ import { el } from './dom.js';
 import { t } from '../app.js';
 import {
   removeSpirit, updateSpirit, spiritAttributeValues, spiritConditionMonitor,
+  damageAfterBoxClick, setSpiritDamage,
 } from '../model.js';
-import { localizedPair, getSpiritCatalog } from '../spirit-catalog.js';
+import { localizedPair, getSpiritCatalog, localizeSpiritText } from '../spirit-catalog.js';
+import { openSpiritModal } from './modals.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
 
 // Localized attribute labels, kept here (the only consumer) rather than as 20 i18n
@@ -13,11 +15,16 @@ const ATTR_LABELS = {
   de: { body: 'Konstitution', agility: 'Geschicklichkeit', reaction: 'Reaktion', strength: 'Stärke', willpower: 'Willenskraft', logic: 'Logik', intuition: 'Intuition', charisma: 'Charisma', magic: 'Magie', essence: 'Essenz' },
 };
 
-// One "Label: a, b, c" line from a list of {en,de} pairs; null when the list is empty.
+// One "Label: value" line in the card's detail style; null when there is no value.
+function labelLine(label, value) {
+  if (!value) return null;
+  return el('div', { class: 'muted' }, [el('span', { class: 'spirit-label' }, `${label}: `), value]);
+}
+
+// A "Label: a, b, c" line from a list of {en,de} pairs; null when the list is empty.
 function pairLine(label, list, lang) {
   if (!list || list.length === 0) return null;
-  const names = list.map((p) => localizedPair(p, lang)).filter(Boolean).join(', ');
-  return el('div', { class: 'muted' }, [el('span', { class: 'spirit-label' }, `${label}: `), names]);
+  return labelLine(label, list.map((p) => localizedPair(p, lang)).filter(Boolean).join(', '));
 }
 
 export function spiritCard(c, spirit) {
@@ -32,25 +39,26 @@ export function spiritCard(c, spirit) {
   const display = spirit.name ? `${spirit.name} (${meta})` : `${typeLabel} (${t('force')}: ${spirit.force})`;
   const card = el('div', { class: 'card' });
 
-  // Header: "Name (Type, Force: x)" + rename / dismiss.
-  card.append(el('div', { class: 'row spread' }, [
+  // Header: "Name (Type, Force: x)" on the left; edit (the spirit dialog) then
+  // dismiss on the right — same layout as the weapon card.
+  card.append(el('div', { class: 'row spread card-head spirit-head' }, [
+    el('h2', {}, display),
     el('div', { class: 'row' }, [
-      el('h2', {}, display),
-      el('button', { class: 'icon', title: t('edit'), onclick: () => renameSpirit(c, spirit) }, '✎'),
+      el('button', { class: 'icon', title: t('editSpirit'), onclick: () => openSpiritModal(c, spirit) }, '✎'),
+      el('button', {
+        class: 'icon danger', title: t('remove'),
+        onclick: () => { if (confirm(t('removeSpiritConfirm', display))) updateCharacter(c.id, (ch) => removeSpirit(ch, spirit.id)); },
+      }, '🗑'),
     ]),
-    el('button', {
-      class: 'icon danger', title: t('remove'),
-      onclick: () => { if (confirm(t('removeSpiritConfirm', display))) updateCharacter(c.id, (ch) => removeSpirit(ch, spirit.id)); },
-    }, '🗑'),
   ]));
 
   // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
-  // the last row carries Magic, Essence, and the condition monitor, evenly split
-  // across the full width.
+  // the last row carries Magic and Essence, evenly split across the full width.
+  // The condition monitor has its own box tracker at the bottom of the card.
   const labels = ATTR_LABELS[lang] || ATTR_LABELS.en;
   const v = spiritAttributeValues(spirit);
   // Abbreviate labels to their first 3 letters so cells stay narrow (e.g.
-  // Konstitution -> Kon, Body -> Bod, Zustandsmonitor -> Zus).
+  // Konstitution -> Kon, Body -> Bod).
   const cell = (label, val) => el('div', { class: 'stat' }, [
     el('span', { class: 'stat-label' }, `${label.slice(0, 3)}: `),
     el('span', { class: 'stat-val' }, String(val ?? '–')),
@@ -59,41 +67,62 @@ export function spiritCard(c, spirit) {
     cell(labels.body, v.body), cell(labels.agility, v.agility), cell(labels.reaction, v.reaction), cell(labels.strength, v.strength),
     cell(labels.willpower, v.willpower), cell(labels.logic, v.logic), cell(labels.intuition, v.intuition), cell(labels.charisma, v.charisma),
     el('div', { class: 'stat-row3' }, [
-      cell(labels.magic, v.magic), cell(labels.essence, v.essence), cell(t('conditionMonitor'), spiritConditionMonitor(spirit)),
+      cell(labels.magic, v.magic), cell(labels.essence, v.essence),
     ]),
   ]));
 
-  // Derived display strings (Force-independent notation, faithful to the source).
-  const derived = [
-    spirit.initiative && `${t('initiativeLabel')}: ${spirit.initiative}`,
-    spirit.astralInitiative && `${t('astralInitiativeLabel')}: ${spirit.astralInitiative}`,
-    spirit.actions && `${t('actionsLabel')}: ${spirit.actions}`,
-    spirit.movement && `${t('movementLabel')}: ${spirit.movement}`,
-  ].filter(Boolean);
-  if (derived.length) card.append(el('div', { class: 'muted' }, derived.join('  ·  ')));
+  // Divider between the attributes and the details below.
+  card.append(el('hr', { class: 'card-sep' }));
 
-  // Powers / optional powers / skills / weaknesses.
+  // Derived values (Force-independent notation, faithful to the source), then
+  // powers / optional powers / skills / weaknesses — one "Label: value" row each,
+  // except the two initiatives, which share a row in two equal columns.
+  const initiatives = [
+    labelLine(t('initiativeLabel'), spirit.initiative),
+    labelLine(t('astralInitiativeLabel'), spirit.astralInitiative),
+  ].filter(Boolean);
   for (const line of [
+    initiatives.length ? el('div', { class: 'spirit-pair' }, initiatives) : null,
+    labelLine(t('actionsLabel'), localizeSpiritText(spirit.actions, lang)),
+    labelLine(t('movementLabel'), localizeSpiritText(spirit.movement, lang)),
     pairLine(t('innatePowers'), spirit.powers, lang),
     pairLine(t('optionalPowersLabel'), spirit.optionalPowers, lang),
     pairLine(t('skillsLabel'), spirit.skills, lang),
     pairLine(t('weaknessesLabel'), spirit.weaknesses, lang),
   ]) { if (line) card.append(line); }
 
-  // Services counter — bottom-right of the card.
+  // Divider between the details and the trackers.
+  card.append(el('hr', { class: 'card-sep' }));
+
+  // Bottom block, two columns (2/3 | 1/3): the condition monitor on the left and
+  // services on the right, headings on one line and their controls below —
+  // boxes left-aligned (wrapping onto more rows as needed), counter right-aligned.
+  //
+  // Condition monitor: one box per point, filled left to right. Clicking an
+  // empty box fills up to it; clicking a filled box clears it and everything
+  // to its right (damageAfterBoxClick).
+  const boxes = spiritConditionMonitor(spirit);
+  const damage = Math.min(spirit.damage ?? 0, boxes);
   const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
-  card.append(el('div', { class: 'row spirit-services' }, [
-    el('span', { class: 'services-label' }, t('services')),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
-    el('span', { class: 'count' }, String(spirit.services)),
-    el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+  card.append(el('div', { class: 'spirit-trackers' }, [
+    el('span', { class: 'services-label' }, `${t('conditionMonitor')} (${damage}/${boxes})`),
+    el('span', { class: 'services-label end' }, t('services')),
+    el('div', { class: 'cm-boxes', role: 'group', 'aria-label': t('conditionMonitor') },
+      Array.from({ length: boxes }, (_, i) => {
+        const box = i + 1;
+        const filled = box <= damage;
+        return el('button', {
+          type: 'button', class: filled ? 'cm-box filled' : 'cm-box',
+          role: 'checkbox', 'aria-checked': filled ? 'true' : 'false', 'aria-label': `${box} / ${boxes}`,
+          onclick: () => updateCharacter(c.id, (ch) => setSpiritDamage(ch, spirit.id, damageAfterBoxClick(damage, box))),
+        });
+      })),
+    el('div', { class: 'row spirit-services', 'aria-label': t('services') }, [
+      el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
+      el('span', { class: 'count' }, String(spirit.services)),
+      el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+    ]),
   ]));
 
   return card;
-}
-
-function renameSpirit(c, spirit) {
-  const name = prompt(t('spiritNamePrompt'), spirit.name || '');
-  if (name === null) return;
-  updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { name: name.trim() }));
 }

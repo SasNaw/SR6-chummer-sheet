@@ -280,7 +280,7 @@ export function removeDrone(character, name) {
 // weapons) keeps cards renderable after the catalog is cleared or moved devices.
 export function createSpirit(props = {}) {
   const {
-    name = '', type = '', typeName = { en: '', de: null }, force = 0, services = 0,
+    name = '', type = '', typeName = { en: '', de: null }, force = 0, services = 0, damage = 0,
     attributes = {}, conditionMonitor = '',
     initiative = '', astralInitiative = '', actions = '', movement = '',
     skills = [], powers = [], optionalPowers = [], weaknesses = [], id,
@@ -288,12 +288,47 @@ export function createSpirit(props = {}) {
   const copyPairs = (list) => list.map((p) => ({ ...p }));
   return {
     id: id !== undefined ? id : newId(),
-    name, type, typeName: { ...typeName }, force, services,
+    name, type, typeName: { ...typeName }, force, services, damage,
     attributes: { ...attributes }, conditionMonitor,
     initiative, astralInitiative, actions, movement,
     skills: copyPairs(skills), powers: copyPairs(powers),
     optionalPowers: copyPairs(optionalPowers), weaknesses: copyPairs(weaknesses),
   };
+}
+
+// A spirit built from a spirit-catalog entry plus the dialog's choices (name,
+// Force, services, selected optional powers). Shared by summoning and by
+// changing an existing spirit's type.
+export function spiritFromCatalog(entry, { id, name = '', force = 1, services = 0, optionalPowers = [] } = {}) {
+  return createSpirit({
+    id, name, type: entry.id, typeName: entry.name,
+    force: Math.max(1, force), services: Math.max(0, services),
+    attributes: entry.attributes, conditionMonitor: entry.conditionMonitor,
+    initiative: entry.initiative, astralInitiative: entry.astralInitiative,
+    actions: entry.actions, movement: entry.movement,
+    skills: entry.skills || [], powers: entry.powers || [],
+    optionalPowers, weaknesses: entry.weaknesses || [],
+  });
+}
+
+// Applies the spirit dialog's edits. `entry` is the catalog entry of the chosen
+// type (optional). The same type keeps the stored snapshot and only changes
+// name / Force / services / optional powers; a different type re-snapshots the
+// spirit from `entry`, keeping its id.
+export function editSpirit(character, spiritId, { name = '', force = 1, services = 0, optionalPowers = [], entry = null }) {
+  const spirits = character.spirits ?? [];
+  const old = spirits.find((s) => s.id === spiritId);
+  if (!old) return character;
+  const choices = { id: old.id, name, force, services, optionalPowers };
+  const next = entry && entry.id !== old.type
+    ? spiritFromCatalog(entry, choices)
+    : {
+      ...old, name, force: Math.max(1, force), services: Math.max(0, services),
+      optionalPowers: optionalPowers.map((p) => ({ ...p })),
+    };
+  // Damage carries over, capped when a lower Force shrinks the condition monitor.
+  next.damage = clamp(old.damage ?? 0, 0, spiritConditionMonitor(next));
+  return { ...character, spirits: spirits.map((s) => (s.id === spiritId ? next : s)) };
 }
 
 export function addSpirit(character, spirit) {
@@ -324,6 +359,24 @@ export function spiritAttributeValues(spirit) {
 // SR6 spirit physical condition monitor: 8 + (Force / 2, rounded up).
 export function spiritConditionMonitor(spirit) {
   return 8 + Math.ceil(spirit.force / 2);
+}
+
+// Condition-monitor boxes are numbered 1..n from the left; `damage` d means boxes
+// 1..d are filled. Clicking an empty box fills it and every box to its left;
+// clicking a filled box empties it and every box to its right.
+export function damageAfterBoxClick(damage, box) {
+  return box > damage ? box : box - 1;
+}
+
+// Sets a spirit's damage, clamped to 0..its condition monitor.
+export function setSpiritDamage(character, spiritId, damage) {
+  const spirits = character.spirits ?? [];
+  if (!spirits.some((s) => s.id === spiritId)) return character;
+  return {
+    ...character,
+    spirits: spirits.map((s) => (s.id === spiritId
+      ? { ...s, damage: clamp(damage, 0, spiritConditionMonitor(s)) } : s)),
+  };
 }
 
 // How many optional powers a spirit of the given Force may take: Force / 3, floored.

@@ -52,6 +52,7 @@ button.accent { background: var(--accent); color: var(--accent-ink); border-colo
 button.accent:hover { filter: brightness(1.06); }
 button.danger { color: var(--danger); }
 button.icon { min-width: 44px; padding: 10px; }
+button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
 
 input, select {
   font: inherit; color: var(--text); background: var(--panel-2);
@@ -164,12 +165,15 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .ar-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
 .ar-vals { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
 
+/* Card header, for every card with a title and action buttons (weapon, spirit,
+   and any future card): the title takes the free width and wraps; the buttons
+   (edit, then delete) stay together on the right; the title is vertically
+   centred on the buttons. */
+.card-head { flex-wrap: nowrap; align-items: center; }
+.card-head h2 { min-width: 0; overflow-wrap: anywhere; }
+.card-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
+
 /* Attack-rating dialog: the five bands side by side, wrapping on narrow phones. */
-/* Weapon card header: the name takes the free width and wraps; edit + delete
-   stay together on the right. */
-.weapon-head { flex-wrap: nowrap; align-items: flex-start; }
-.weapon-head h2 { min-width: 0; overflow-wrap: anywhere; }
-.weapon-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
 .ar-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .ar-fields .field { gap: 4px; }
 .ar-fields .muted { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -183,17 +187,44 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* minmax(0, 1fr) lets the columns shrink below their content's width, so the
    card never grows wider than the screen. */
 .spirit-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; }
-.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Label left, value pinned right: equal-width columns put every value at the same
    x within its column, so numbers line up vertically across rows. */
 .stat { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; min-width: 0; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
+/* Thin divider between card sections, inset from the card edges; the extra
+   vertical margin widens the gap between sections beyond the card's 12px. */
+.card-sep { border: 0; border-top: 1px solid var(--line); margin: 6px 12px; }
+/* Spirit attributes read "BOD: 3": value right after its label, the spacing
+   goes between cells instead. */
+.spirit-stats .stat { justify-content: flex-start; gap: 4px; }
+/* Same label width everywhere (sized for the widest 3-letter label), so the
+   values line up vertically within each column. */
+.spirit-stats .stat-label { min-width: 3.4em; }
+/* Header-to-attributes gap matches the attributes-to-divider gap (12px card gap
+   + the divider's 6px margin). */
+.spirit-head { margin-bottom: 6px; }
+/* Two detail rows side by side (Initiative | Astral initiative), equal columns. */
+.spirit-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+/* Optional-power count when more are selected than the Force allows (Save is blocked). */
+.over-cap { color: var(--danger); }
 
-/* Spirit services — bottom-right counter; label sits right next to it. */
-.spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }
-.spirit-services .services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+/* Spirit card bottom block: condition monitor (2/3) | services (1/3). Headings
+   share the first row; boxes (left, wrapping) and the counter (right) the second.
+   The counter is compacted so it fits a third of a phone-width card. */
+.spirit-trackers { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+.services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); font-size: 13px; }
+.services-label.end { text-align: right; }
+.spirit-services { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; align-items: center; }
+.spirit-services button.icon { min-width: 34px; width: 34px; min-height: 34px; height: 34px; padding: 0; }
+.spirit-services .count { font-size: 24px; min-width: 1.2em; text-align: center; }
+
+/* Condition monitor: tappable boxes that wrap onto as many rows as needed. */
+.cm-boxes { display: flex; flex-wrap: wrap; gap: 6px; }
+.cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
+.cm-box.filled { background: var(--accent); border-color: var(--accent); }
 
 /* Inline -/value/+ stepper (modal numeric fields) */
 .stepper { display: inline-flex; align-items: center; gap: 10px; }
