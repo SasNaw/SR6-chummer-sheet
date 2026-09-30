@@ -3,18 +3,19 @@ import { localizedPair } from '../spirit-catalog.js';
 import { uiLang } from './sheet-common.js';
 import { t } from '../app.js';
 
-// Short stat labels (display order) with the full name as a tooltip. Kept here,
-// the only consumer, rather than as i18n keys (same approach as spirit-card).
+// Stat labels in display order. Kept here, the only consumer, rather than as
+// i18n keys (same approach as spirit-card). \u00ad = soft hyphen, so long German
+// compounds break at a sensible point on narrow screens.
 const STAT_LABELS = {
   en: [
-    ['handling', 'Han', 'Handling (on-road/off-road)'], ['acceleration', 'Acc', 'Acceleration'],
-    ['speedInterval', 'SpdI', 'Speed Interval'], ['topSpeed', 'TSpd', 'Top Speed'],
-    ['body', 'Bod', 'Body'], ['armor', 'Arm', 'Armor'], ['pilot', 'Pil', 'Pilot'], ['sensor', 'Sen', 'Sensor'],
+    ['handling', 'Handling'], ['acceleration', 'Acceleration'],
+    ['speedInterval', 'Speed Interval'], ['topSpeed', 'Top Speed'],
+    ['body', 'Body'], ['armor', 'Armor'], ['pilot', 'Pilot'], ['sensor', 'Sensor'],
   ],
   de: [
-    ['handling', 'Hand', 'Handling (Straße/Gelände)'], ['acceleration', 'Beschl', 'Beschleunigung'],
-    ['speedInterval', 'GInt', 'Geschwindigkeitsintervall'], ['topSpeed', 'Max', 'Höchstgeschwindigkeit'],
-    ['body', 'Rumpf', 'Rumpf'], ['armor', 'Panz', 'Panzerung'], ['pilot', 'Pilot', 'Pilot'], ['sensor', 'Sens', 'Sensor'],
+    ['handling', 'Handling'], ['acceleration', 'Beschleunigung'],
+    ['speedInterval', 'Geschwindigkeits\u00adintervall'], ['topSpeed', 'Höchst\u00adgeschwindigkeit'],
+    ['body', 'Rumpf'], ['armor', 'Panzerung'], ['pilot', 'Pilot'], ['sensor', 'Sensor'],
   ],
 };
 
@@ -27,7 +28,7 @@ const SUBTYPE_LABELS = {
   de: { AIR: 'Luft', GROUND: 'Boden', WATER: 'Wasser', ANTHRO: 'Anthro' },
 };
 
-// One-line summary under the drone name: "Steel Lynx Combat Drone · Large · Ground · ×2".
+// One-line summary under the drone name: "Steel Lynx Combat Drone · Large · Ground".
 // The type name is omitted when the drone's name already is that type name.
 // Returns '' when there is nothing to add.
 function droneMeta(drone) {
@@ -37,16 +38,16 @@ function droneMeta(drone) {
     typeLabel && typeLabel !== drone.name ? typeLabel : null,
     drone.size && ((SIZE_LABELS[lang] || SIZE_LABELS.en)[drone.size] || drone.size),
     drone.subtype && ((SUBTYPE_LABELS[lang] || SUBTYPE_LABELS.en)[drone.subtype] || drone.subtype),
-    drone.count > 1 ? `×${drone.count}` : null,
   ].filter(Boolean);
   return parts.join(' · ');
 }
 
-// Stat grid (4 columns × 2 rows) for a drone that has a stats snapshot.
+// Stat grid (2 columns × 4 rows, room for full labels) for a drone that has a
+// stats snapshot.
 function droneStats(drone) {
   const labels = STAT_LABELS[uiLang()] || STAT_LABELS.en;
-  return el('div', { class: 'drone-stats' }, labels.map(([key, short, full]) => el('div', { class: 'stat', title: full }, [
-    el('span', { class: 'stat-label' }, `${short}: `),
+  return el('div', { class: 'drone-stats' }, labels.map(([key, label]) => el('div', { class: 'stat' }, [
+    el('span', { class: 'stat-label' }, label),
     el('span', { class: 'stat-val' }, String(drone.stats[key] ?? '–')),
   ])));
 }

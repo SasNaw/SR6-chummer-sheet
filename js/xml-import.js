@@ -33,21 +33,32 @@ function ownerName(item, droneCatalog, lang) {
   return (n && ((lang === 'de' && n.de) || n.en)) || prettifyRef(ref);
 }
 
+function itemCount(item) {
+  return parseInt(attr(item, 'count') || '1', 10) || 1;
+}
+
+// Name of the i-th (0-based) drone of an item. An item with count > 1 becomes
+// that many separate drones, numbered "Name 1", "Name 2", … so each stays
+// uniquely addressable (weapons mount by drone name).
+function droneName(item, i, droneCatalog, lang) {
+  const base = ownerName(item, droneCatalog, lang);
+  return itemCount(item) > 1 ? `${base} ${i + 1}` : base;
+}
+
 function parseDrones(items, droneCatalog, lang) {
   return items
     .filter((it) => (attr(it, 'type') || '').startsWith('DRONE_') && !attr(it, 'embedin'))
-    .map((it) => {
+    .flatMap((it) => {
       const ref = attr(it, 'ref');
       const entry = droneEntry(droneCatalog, ref);
-      return createDrone({
-        name: ownerName(it, droneCatalog, lang),
+      return Array.from({ length: itemCount(it) }, (_, i) => createDrone({
+        name: droneName(it, i, droneCatalog, lang),
         ref,
         typeName: entry ? entry.name : null,
         size: attr(it, 'type'),
         subtype: attr(it, 'subtype'),
-        count: parseInt(attr(it, 'count') || '1', 10) || 1,
         stats: entry ? entry.stats : null,
-      });
+      }));
     });
 }
 
@@ -101,7 +112,8 @@ function resolveMount(item, idx, droneCatalog, lang) {
     }
     const parentEmbed = attr(owner, 'embedin');
     if (!parentEmbed) {
-      return ownerName(owner, droneCatalog, lang);
+      // Accessories of a multi-count drone attach to the first of them.
+      return droneName(owner, 0, droneCatalog, lang);
     }
     cur = parentEmbed;
   }

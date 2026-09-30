@@ -34,7 +34,6 @@ test('addDrone appends a drone by name and dedupes', () => {
   c = addDrone(c, 'R.E.X.'); // duplicate ignored
   assert.deepEqual(c.drones.map((d) => d.name), ['R.E.X.', 'Gremlin']);
   assert.equal(c.drones[0].stats, null); // hand-added drones carry no stats
-  assert.equal(c.drones[0].count, 1);
   assert.equal(addDrone(c, ''), c); // empty name is a no-op (same reference)
 });
 
@@ -48,10 +47,10 @@ test('addDrone accepts a full drone object', () => {
 
 test('createDrone copies stats and defaults the rest', () => {
   const stats = { handling: '3/5', body: 12 };
-  const d = createDrone({ id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', count: 2, stats });
+  const d = createDrone({ id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', stats });
   assert.deepEqual(d, {
     id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', typeName: null,
-    size: null, subtype: null, count: 2, stats: { handling: '3/5', body: 12 },
+    size: null, subtype: null, stats: { handling: '3/5', body: 12 },
   });
   assert.notEqual(d.stats, stats); // copied, not shared
 });

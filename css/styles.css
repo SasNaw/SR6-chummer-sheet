@@ -227,8 +227,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
 .cm-box.filled { background: var(--accent); border-color: var(--accent); }
 
-/* Drone stats — same cell style as spirits, four columns × two rows. */
-.drone-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; }
+/* Drone stats — same cell style as spirits; two columns so full labels fit. */
+.drone-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+/* Full words (e.g. "Geschwindigkeitsintervall") don't fit in the spirit-style
+   uppercase tracking at phone width, so drone labels use normal case and wrap at
+   the soft hyphens set in drone-card.js. */
+.drone-stats .stat-label { text-transform: none; letter-spacing: 0; font-size: 12px; overflow-wrap: break-word; }
 
 
 /* Inline -/value/+ stepper (modal numeric fields) */

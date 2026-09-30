@@ -135,10 +135,11 @@ const DRONE_CAT = { drones: {
 
 test('S4T0: four drones imported without a drone catalog', () => {
   const c = parseSr6CharDoc(load('S4T0.xml'));
+  // count="2" becomes two separate, uniquely numbered drones.
   assert.deepEqual(c.drones.map((d) => d.name), [
-    'R.E.X. (Steel Lync Combat Drone)', 'Gremlin (MCT-Nissan Roto-Drohne)', 'Mct Gnat', 'Cyberspace Designs Quadrotor',
+    'R.E.X. (Steel Lync Combat Drone)', 'Gremlin (MCT-Nissan Roto-Drohne)', 'Mct Gnat 1', 'Mct Gnat 2', 'Cyberspace Designs Quadrotor',
   ]);
-  assert.deepEqual(c.drones.map((d) => d.count), [1, 1, 2, 1]);
+  assert.equal(new Set(c.drones.map((d) => d.id)).size, 5);
   assert.equal(c.drones[0].ref, 'steel_lynx_combat_drone');
   assert.equal(c.drones[0].size, 'DRONE_LARGE');
   assert.equal(c.drones[0].subtype, 'GROUND');
@@ -153,7 +154,7 @@ test('S4T0: a drone catalog supplies stats and names', () => {
   assert.equal(rex.stats.handling, '1/2');
   assert.equal(rex.stats.sensor, 9);
   const gnat = c.drones.find((d) => d.ref === 'mct_gnat');
-  assert.equal(gnat.name, 'Mücke'); // no customName -> localized catalog name
+  assert.equal(gnat.name, 'Mücke 1'); // no customName -> localized catalog name, numbered
   assert.equal(c.drones.find((d) => d.ref === 'cyberspace_designs_quadrotor').stats, null); // not in catalog
   // Mounted weapons still point at their drone by name.
   assert.equal(c.weapons.filter((w) => w.mount === rex.name).length, 2);

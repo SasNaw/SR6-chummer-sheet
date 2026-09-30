@@ -267,11 +267,11 @@ export function removeWeapon(character, weaponId) {
 // topSpeed, body, armor, pilot, sensor.
 export function createDrone(props = {}) {
   const {
-    name = '', ref = null, typeName = null, size = null, subtype = null, count = 1, stats = null, id,
+    name = '', ref = null, typeName = null, size = null, subtype = null, stats = null, id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
-    name, ref, typeName: typeName ? { ...typeName } : null, size, subtype, count,
+    name, ref, typeName: typeName ? { ...typeName } : null, size, subtype,
     stats: stats ? { ...stats } : null,
   };
 }
