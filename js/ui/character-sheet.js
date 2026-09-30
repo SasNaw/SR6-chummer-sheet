@@ -5,7 +5,7 @@ import { updateCharacter, catName, typeNameL, droneNames } from './sheet-common.
 import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
-import { openWeaponModal, openAddDroneModal, openAddPoolModal, openAddSpiritModal } from './modals.js';
+import { openWeaponModal, openAddDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -104,7 +104,7 @@ function magicTab(container, c) {
   const hasCatalog = Boolean(getSpiritCatalog());
   const addBtn = el('button', {
     disabled: hasCatalog ? null : 'true',
-    onclick: hasCatalog ? () => openAddSpiritModal(c) : null,
+    onclick: hasCatalog ? () => openSpiritModal(c) : null,
   }, t('addSpirit'));
 
   const children = [el('div', { class: 'section-title' }, [el('h2', {}, t('summonedSpirits')), addBtn])];

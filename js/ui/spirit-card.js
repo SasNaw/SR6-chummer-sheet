@@ -3,7 +3,8 @@ import { t } from '../app.js';
 import {
   removeSpirit, updateSpirit, spiritAttributeValues, spiritConditionMonitor,
 } from '../model.js';
-import { localizedPair, getSpiritCatalog } from '../spirit-catalog.js';
+import { localizedPair, getSpiritCatalog, localizeSpiritText } from '../spirit-catalog.js';
+import { openSpiritModal } from './modals.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
 
 // Localized attribute labels, kept here (the only consumer) rather than as 20 i18n
@@ -13,11 +14,16 @@ const ATTR_LABELS = {
   de: { body: 'Konstitution', agility: 'Geschicklichkeit', reaction: 'Reaktion', strength: 'Stärke', willpower: 'Willenskraft', logic: 'Logik', intuition: 'Intuition', charisma: 'Charisma', magic: 'Magie', essence: 'Essenz' },
 };
 
-// One "Label: a, b, c" line from a list of {en,de} pairs; null when the list is empty.
+// One "Label: value" line in the card's detail style; null when there is no value.
+function labelLine(label, value) {
+  if (!value) return null;
+  return el('div', { class: 'muted' }, [el('span', { class: 'spirit-label' }, `${label}: `), value]);
+}
+
+// A "Label: a, b, c" line from a list of {en,de} pairs; null when the list is empty.
 function pairLine(label, list, lang) {
   if (!list || list.length === 0) return null;
-  const names = list.map((p) => localizedPair(p, lang)).filter(Boolean).join(', ');
-  return el('div', { class: 'muted' }, [el('span', { class: 'spirit-label' }, `${label}: `), names]);
+  return labelLine(label, list.map((p) => localizedPair(p, lang)).filter(Boolean).join(', '));
 }
 
 export function spiritCard(c, spirit) {
@@ -32,16 +38,17 @@ export function spiritCard(c, spirit) {
   const display = spirit.name ? `${spirit.name} (${meta})` : `${typeLabel} (${t('force')}: ${spirit.force})`;
   const card = el('div', { class: 'card' });
 
-  // Header: "Name (Type, Force: x)" + rename / dismiss.
-  card.append(el('div', { class: 'row spread' }, [
+  // Header: "Name (Type, Force: x)" on the left; edit (the spirit dialog) then
+  // dismiss on the right — same layout as the weapon card.
+  card.append(el('div', { class: 'row spread weapon-head' }, [
+    el('h2', {}, display),
     el('div', { class: 'row' }, [
-      el('h2', {}, display),
-      el('button', { class: 'icon', title: t('edit'), onclick: () => renameSpirit(c, spirit) }, '✎'),
+      el('button', { class: 'icon', title: t('editSpirit'), onclick: () => openSpiritModal(c, spirit) }, '✎'),
+      el('button', {
+        class: 'icon danger', title: t('remove'),
+        onclick: () => { if (confirm(t('removeSpiritConfirm', display))) updateCharacter(c.id, (ch) => removeSpirit(ch, spirit.id)); },
+      }, '🗑'),
     ]),
-    el('button', {
-      class: 'icon danger', title: t('remove'),
-      onclick: () => { if (confirm(t('removeSpiritConfirm', display))) updateCharacter(c.id, (ch) => removeSpirit(ch, spirit.id)); },
-    }, '🗑'),
   ]));
 
   // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
@@ -63,17 +70,13 @@ export function spiritCard(c, spirit) {
     ]),
   ]));
 
-  // Derived display strings (Force-independent notation, faithful to the source).
-  const derived = [
-    spirit.initiative && `${t('initiativeLabel')}: ${spirit.initiative}`,
-    spirit.astralInitiative && `${t('astralInitiativeLabel')}: ${spirit.astralInitiative}`,
-    spirit.actions && `${t('actionsLabel')}: ${spirit.actions}`,
-    spirit.movement && `${t('movementLabel')}: ${spirit.movement}`,
-  ].filter(Boolean);
-  if (derived.length) card.append(el('div', { class: 'muted' }, derived.join('  ·  ')));
-
-  // Powers / optional powers / skills / weaknesses.
+  // Derived values (Force-independent notation, faithful to the source), then
+  // powers / optional powers / skills / weaknesses — one "Label: value" row each.
   for (const line of [
+    labelLine(t('initiativeLabel'), spirit.initiative),
+    labelLine(t('astralInitiativeLabel'), spirit.astralInitiative),
+    labelLine(t('actionsLabel'), localizeSpiritText(spirit.actions, lang)),
+    labelLine(t('movementLabel'), localizeSpiritText(spirit.movement, lang)),
     pairLine(t('innatePowers'), spirit.powers, lang),
     pairLine(t('optionalPowersLabel'), spirit.optionalPowers, lang),
     pairLine(t('skillsLabel'), spirit.skills, lang),
@@ -90,10 +93,4 @@ export function spiritCard(c, spirit) {
   ]));
 
   return card;
-}
-
-function renameSpirit(c, spirit) {
-  const name = prompt(t('spiritNamePrompt'), spirit.name || '');
-  if (name === null) return;
-  updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { name: name.trim() }));
 }

@@ -296,6 +296,39 @@ export function createSpirit(props = {}) {
   };
 }
 
+// A spirit built from a spirit-catalog entry plus the dialog's choices (name,
+// Force, services, selected optional powers). Shared by summoning and by
+// changing an existing spirit's type.
+export function spiritFromCatalog(entry, { id, name = '', force = 1, services = 0, optionalPowers = [] } = {}) {
+  return createSpirit({
+    id, name, type: entry.id, typeName: entry.name,
+    force: Math.max(1, force), services: Math.max(0, services),
+    attributes: entry.attributes, conditionMonitor: entry.conditionMonitor,
+    initiative: entry.initiative, astralInitiative: entry.astralInitiative,
+    actions: entry.actions, movement: entry.movement,
+    skills: entry.skills || [], powers: entry.powers || [],
+    optionalPowers, weaknesses: entry.weaknesses || [],
+  });
+}
+
+// Applies the spirit dialog's edits. `entry` is the catalog entry of the chosen
+// type (optional). The same type keeps the stored snapshot and only changes
+// name / Force / services / optional powers; a different type re-snapshots the
+// spirit from `entry`, keeping its id.
+export function editSpirit(character, spiritId, { name = '', force = 1, services = 0, optionalPowers = [], entry = null }) {
+  const spirits = character.spirits ?? [];
+  const old = spirits.find((s) => s.id === spiritId);
+  if (!old) return character;
+  const choices = { id: old.id, name, force, services, optionalPowers };
+  const next = entry && entry.id !== old.type
+    ? spiritFromCatalog(entry, choices)
+    : {
+      ...old, name, force: Math.max(1, force), services: Math.max(0, services),
+      optionalPowers: optionalPowers.map((p) => ({ ...p })),
+    };
+  return { ...character, spirits: spirits.map((s) => (s.id === spiritId ? next : s)) };
+}
+
 export function addSpirit(character, spirit) {
   return { ...character, spirits: [...(character.spirits ?? []), { ...spirit }] };
 }

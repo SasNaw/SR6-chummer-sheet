@@ -41,7 +41,6 @@ export const STRINGS = {
       ? `Delete drone "${name}" and its ${n} weapon(s)?`
       : `Delete drone "${name}"?`),
     // Weapon card
-    edit: 'Edit',
     remove: 'Remove',
     removeWeaponConfirm: (name) => `Remove ${name}?`,
     reload: 'Reload',
@@ -104,6 +103,8 @@ export const STRINGS = {
     summonedSpirits: 'Summoned spirits',
     addSpirit: '+ Spirit',
     addSpiritTitle: 'Summon spirit',
+    editSpiritTitle: 'Edit spirit',
+    editSpirit: 'Edit spirit',
     spiritType: 'Spirit type',
     force: 'Force',
     spiritNamePlaceholder: 'Spirit name (optional)',
@@ -121,7 +122,6 @@ export const STRINGS = {
     attributesLabel: 'Attributes',
     noSpirits: 'No spirits summoned.',
     needSpiritCatalog: 'Import a spirit catalog (on the character screen) to summon spirits.',
-    spiritNamePrompt: 'Spirit name (leave blank to use the type name):',
     removeSpiritConfirm: (name) => `Dismiss ${name}?`,
     // Spirit catalog
     loadSpiritCatalog: 'Load spirit catalog',
@@ -165,7 +165,6 @@ export const STRINGS = {
     deleteDroneConfirm: (name, n) => (n > 0
       ? `Drohne "${name}" und ihre ${n} Waffe(n) löschen?`
       : `Drohne "${name}" löschen?`),
-    edit: 'Bearbeiten',
     remove: 'Entfernen',
     removeWeaponConfirm: (name) => `${name} entfernen?`,
     reload: 'Nachladen',
@@ -220,6 +219,8 @@ export const STRINGS = {
     summonedSpirits: 'Beschworene Geister',
     addSpirit: '+ Geist',
     addSpiritTitle: 'Geist beschwören',
+    editSpiritTitle: 'Geist bearbeiten',
+    editSpirit: 'Geist bearbeiten',
     spiritType: 'Geistertyp',
     force: 'Kraftstufe',
     spiritNamePlaceholder: 'Geistername (optional)',
@@ -237,7 +238,6 @@ export const STRINGS = {
     attributesLabel: 'Attribute',
     noSpirits: 'Keine Geister beschworen.',
     needSpiritCatalog: 'Importiere einen Geisterkatalog (auf dem Charakter-Bildschirm), um Geister zu beschwören.',
-    spiritNamePrompt: 'Geistername (leer lassen, um den Typnamen zu verwenden):',
     removeSpiritConfirm: (name) => `${name} entlassen?`,
     loadSpiritCatalog: 'Geisterkatalog laden',
     clearSpiritCatalog: 'Geisterkatalog löschen',

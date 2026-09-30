@@ -52,6 +52,7 @@ button.accent { background: var(--accent); color: var(--accent-ink); border-colo
 button.accent:hover { filter: brightness(1.06); }
 button.danger { color: var(--danger); }
 button.icon { min-width: 44px; padding: 10px; }
+button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
 
 input, select {
   font: inherit; color: var(--text); background: var(--panel-2);
@@ -190,6 +191,8 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
+/* Optional-power count when more are selected than the Force allows (Save is blocked). */
+.over-cap { color: var(--danger); }
 
 /* Spirit services — bottom-right counter; label sits right next to it. */
 .spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }

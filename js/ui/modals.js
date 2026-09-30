@@ -2,7 +2,7 @@ import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
 import {
   addReserve, createReservePool, addDrone, createWeapon, addWeapon,
-  createSpirit, addSpirit, optionalPowerCap, editWeapon, expandFiringModes,
+  addSpirit, spiritFromCatalog, editSpirit, optionalPowerCap, editWeapon, expandFiringModes,
   sanitizeArInput, parseArInput, formatArInput,
   matchingReserves, reload,
 } from '../model.js';
@@ -371,22 +371,35 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
   const close = openModal(editing ? t('editWeaponTitle') : t('addWeaponTitle'), fields);
 }
 
-// Modal to summon a spirit from the loaded spirit catalog: name, type, Force, and
-// an optional-powers selection capped at floor(Force/3). The card is built from a
-// snapshot of the chosen catalog entry (see createSpirit). Only opened when a
-// spirit catalog is loaded.
-export function openAddSpiritModal(c) {
-  const spirits = spiritList(getSpiritCatalog(), uiLang()); // [{ id, label, spirit }]
+// The one spirit dialog, for both summoning and editing: name, type, Force,
+// services, and an optional-powers selection capped at floor(Force/3); Save is
+// blocked while more powers are selected than the Force allows. Without `spirit`
+// it summons from the loaded catalog (only offered when one is loaded). With
+// `spirit` every field is pre-filled and Save applies the edits via editSpirit;
+// without a catalog (or one lacking the type) the dialog falls back to the
+// spirit's own snapshot, so name/Force/services/powers stay editable.
+export function openSpiritModal(c, spirit = null) {
+  const editing = Boolean(spirit);
+  const lang = uiLang();
+  let spirits = spiritList(getSpiritCatalog(), lang); // [{ id, label, spirit }]
+  if (editing && !spirits.some((s) => s.id === spirit.type)) {
+    // Snapshot fallback: the stored spirit stands in for its catalog entry. Its
+    // optionalPowers are only the selected ones, which is all it can offer.
+    spirits = [{ id: spirit.type, label: localizedPair(spirit.typeName, lang) || spirit.type, spirit: { ...spirit, id: spirit.type, name: spirit.typeName } }, ...spirits];
+  }
   if (spirits.length === 0) return;
 
-  const nameInput = el('input', { type: 'text', placeholder: t('spiritNamePlaceholder') });
+  const nameInput = el('input', { type: 'text', placeholder: t('spiritNamePlaceholder'), value: editing ? spirit.name : '' });
   const typeSel = el('select', {}, spirits.map((s) => el('option', { value: s.id }, s.label)));
-  const forceStepper = stepper(3, { min: 1, onChange: () => rebuildOptional() });
-  const servicesStepper = stepper(1, { min: 0 });
+  if (editing) typeSel.value = spirit.type;
+  const forceStepper = stepper(editing ? spirit.force : 3, { min: 1, onChange: () => rebuildOptional() });
+  const servicesStepper = stepper(editing ? spirit.services : 1, { min: 0 });
   const optBox = el('div', { class: 'pick-list' });
   const countLabel = el('div', { class: 'muted' }, '');
+  let saveBtn;
 
-  const selected = new Set(); // keyed by an optional power's English name
+  // Keyed by an optional power's English name.
+  const selected = new Set(editing ? (spirit.optionalPowers || []).map((p) => p.en) : []);
   const spiritOf = (id) => (spirits.find((s) => s.id === id) || {}).spirit;
   const force = () => forceStepper.get();
 
@@ -403,40 +416,40 @@ export function openAddSpiritModal(c) {
         if (cb.checked) selected.add(p.en); else selected.delete(p.en);
         rebuildOptional();
       });
-      optBox.append(el('label', { class: 'pick-row' }, [cb, localizedPair(p, uiLang())]));
+      optBox.append(el('label', { class: 'pick-row' }, [cb, localizedPair(p, lang)]));
     }
+    const over = selected.size > cap;
     countLabel.textContent = t('optionalPowersCount', selected.size, cap);
+    countLabel.classList.toggle('over-cap', over);
+    if (saveBtn) saveBtn.disabled = over;
   }
   typeSel.addEventListener('change', () => { selected.clear(); rebuildOptional(); });
+
+  saveBtn = el('button', {
+    class: 'accent',
+    onclick: () => {
+      const sp = spiritOf(typeSel.value);
+      if (!sp || selected.size > optionalPowerCap(force())) return;
+      const values = {
+        name: nameInput.value.trim(), force: force(), services: servicesStepper.get(),
+        optionalPowers: (sp.optionalPowers || []).filter((p) => selected.has(p.en)),
+      };
+      close();
+      if (editing) {
+        updateCharacter(c.id, (ch) => editSpirit(ch, spirit.id, { ...values, entry: sp }));
+      } else {
+        updateCharacter(c.id, (ch) => addSpirit(ch, spiritFromCatalog(sp, values)));
+      }
+    },
+  }, editing ? t('save') : t('add'));
   rebuildOptional();
 
-  const close = openModal(t('addSpiritTitle'), [
+  const close = openModal(editing ? t('editSpiritTitle') : t('addSpiritTitle'), [
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('spiritType')), typeSel]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('force')), forceStepper.node]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('services')), servicesStepper.node]),
     el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('optionalPowersLabel')), optBox, countLabel]),
-    el('div', { class: 'row spread' }, [
-      el('button', { onclick: () => close() }, t('cancel')),
-      el('button', {
-        class: 'accent',
-        onclick: () => {
-          const sp = spiritOf(typeSel.value);
-          if (!sp) return;
-          const spirit = createSpirit({
-            name: nameInput.value.trim(), type: sp.id, typeName: sp.name, force: Math.max(1, force()),
-            services: servicesStepper.get(),
-            attributes: sp.attributes, conditionMonitor: sp.conditionMonitor,
-            initiative: sp.initiative, astralInitiative: sp.astralInitiative,
-            actions: sp.actions, movement: sp.movement,
-            skills: sp.skills, powers: sp.powers,
-            optionalPowers: (sp.optionalPowers || []).filter((p) => selected.has(p.en)),
-            weaknesses: sp.weaknesses,
-          });
-          close();
-          updateCharacter(c.id, (ch) => addSpirit(ch, spirit));
-        },
-      }, t('add')),
-    ]),
+    el('div', { class: 'row spread' }, [el('button', { onclick: () => close() }, t('cancel')), saveBtn]),
   ]);
 }
