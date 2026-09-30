@@ -280,7 +280,7 @@ export function removeDrone(character, name) {
 // weapons) keeps cards renderable after the catalog is cleared or moved devices.
 export function createSpirit(props = {}) {
   const {
-    name = '', type = '', typeName = { en: '', de: null }, force = 0, services = 0,
+    name = '', type = '', typeName = { en: '', de: null }, force = 0, services = 0, damage = 0,
     attributes = {}, conditionMonitor = '',
     initiative = '', astralInitiative = '', actions = '', movement = '',
     skills = [], powers = [], optionalPowers = [], weaknesses = [], id,
@@ -288,7 +288,7 @@ export function createSpirit(props = {}) {
   const copyPairs = (list) => list.map((p) => ({ ...p }));
   return {
     id: id !== undefined ? id : newId(),
-    name, type, typeName: { ...typeName }, force, services,
+    name, type, typeName: { ...typeName }, force, services, damage,
     attributes: { ...attributes }, conditionMonitor,
     initiative, astralInitiative, actions, movement,
     skills: copyPairs(skills), powers: copyPairs(powers),
@@ -326,6 +326,8 @@ export function editSpirit(character, spiritId, { name = '', force = 1, services
       ...old, name, force: Math.max(1, force), services: Math.max(0, services),
       optionalPowers: optionalPowers.map((p) => ({ ...p })),
     };
+  // Damage carries over, capped when a lower Force shrinks the condition monitor.
+  next.damage = clamp(old.damage ?? 0, 0, spiritConditionMonitor(next));
   return { ...character, spirits: spirits.map((s) => (s.id === spiritId ? next : s)) };
 }
 
@@ -357,6 +359,24 @@ export function spiritAttributeValues(spirit) {
 // SR6 spirit physical condition monitor: 8 + (Force / 2, rounded up).
 export function spiritConditionMonitor(spirit) {
   return 8 + Math.ceil(spirit.force / 2);
+}
+
+// Condition-monitor boxes are numbered 1..n from the left; `damage` d means boxes
+// 1..d are filled. Clicking an empty box fills it and every box to its left;
+// clicking a filled box empties it and every box to its right.
+export function damageAfterBoxClick(damage, box) {
+  return box > damage ? box : box - 1;
+}
+
+// Sets a spirit's damage, clamped to 0..its condition monitor.
+export function setSpiritDamage(character, spiritId, damage) {
+  const spirits = character.spirits ?? [];
+  if (!spirits.some((s) => s.id === spiritId)) return character;
+  return {
+    ...character,
+    spirits: spirits.map((s) => (s.id === spiritId
+      ? { ...s, damage: clamp(damage, 0, spiritConditionMonitor(s)) } : s)),
+  };
 }
 
 // How many optional powers a spirit of the given Force may take: Force / 3, floored.

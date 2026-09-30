@@ -2,6 +2,7 @@ import { el } from './dom.js';
 import { t } from '../app.js';
 import {
   removeSpirit, updateSpirit, spiritAttributeValues, spiritConditionMonitor,
+  damageAfterBoxClick, setSpiritDamage,
 } from '../model.js';
 import { localizedPair, getSpiritCatalog, localizeSpiritText } from '../spirit-catalog.js';
 import { openSpiritModal } from './modals.js';
@@ -52,12 +53,12 @@ export function spiritCard(c, spirit) {
   ]));
 
   // Stat table — 4 columns × 3 rows. Rows 1-2 carry the eight core attributes;
-  // the last row carries Magic, Essence, and the condition monitor, evenly split
-  // across the full width.
+  // the last row carries Magic and Essence, evenly split across the full width.
+  // The condition monitor has its own box tracker at the bottom of the card.
   const labels = ATTR_LABELS[lang] || ATTR_LABELS.en;
   const v = spiritAttributeValues(spirit);
   // Abbreviate labels to their first 3 letters so cells stay narrow (e.g.
-  // Konstitution -> Kon, Body -> Bod, Zustandsmonitor -> Zus).
+  // Konstitution -> Kon, Body -> Bod).
   const cell = (label, val) => el('div', { class: 'stat' }, [
     el('span', { class: 'stat-label' }, `${label.slice(0, 3)}: `),
     el('span', { class: 'stat-val' }, String(val ?? '–')),
@@ -66,7 +67,7 @@ export function spiritCard(c, spirit) {
     cell(labels.body, v.body), cell(labels.agility, v.agility), cell(labels.reaction, v.reaction), cell(labels.strength, v.strength),
     cell(labels.willpower, v.willpower), cell(labels.logic, v.logic), cell(labels.intuition, v.intuition), cell(labels.charisma, v.charisma),
     el('div', { class: 'stat-row3' }, [
-      cell(labels.magic, v.magic), cell(labels.essence, v.essence), cell(t('conditionMonitor'), spiritConditionMonitor(spirit)),
+      cell(labels.magic, v.magic), cell(labels.essence, v.essence),
     ]),
   ]));
 
@@ -94,6 +95,25 @@ export function spiritCard(c, spirit) {
     el('button', { class: 'icon', onclick: () => setServices(spirit.services - 1) }, '−'),
     el('span', { class: 'count' }, String(spirit.services)),
     el('button', { class: 'icon', onclick: () => setServices(spirit.services + 1) }, '+'),
+  ]));
+
+  // Condition monitor: one box per point, filled left to right. Clicking an
+  // empty box fills up to it; clicking a filled box clears it and everything
+  // to its right (damageAfterBoxClick).
+  const boxes = spiritConditionMonitor(spirit);
+  const damage = Math.min(spirit.damage ?? 0, boxes);
+  card.append(el('div', { class: 'field' }, [
+    el('span', { class: 'services-label' }, t('conditionMonitor')),
+    el('div', { class: 'cm-boxes', role: 'group', 'aria-label': t('conditionMonitor') },
+      Array.from({ length: boxes }, (_, i) => {
+        const box = i + 1;
+        const filled = box <= damage;
+        return el('button', {
+          type: 'button', class: filled ? 'cm-box filled' : 'cm-box',
+          role: 'checkbox', 'aria-checked': filled ? 'true' : 'false', 'aria-label': `${box} / ${boxes}`,
+          onclick: () => updateCharacter(c.id, (ch) => setSpiritDamage(ch, spirit.id, damageAfterBoxClick(damage, box))),
+        });
+      })),
   ]));
 
   return card;

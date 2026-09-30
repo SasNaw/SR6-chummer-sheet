@@ -184,7 +184,7 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* minmax(0, 1fr) lets the columns shrink below their content's width, so the
    card never grows wider than the screen. */
 .spirit-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; }
-.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Label left, value pinned right: equal-width columns put every value at the same
    x within its column, so numbers line up vertically across rows. */
 .stat { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; min-width: 0; }
@@ -199,6 +199,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* Spirit services — bottom-right counter; label sits right next to it. */
 .spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }
 .spirit-services .services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+.services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+
+/* Condition monitor: a row of tappable boxes that wraps on narrow screens. */
+.cm-boxes { display: flex; flex-wrap: wrap; gap: 6px; }
+.cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
+.cm-box.filled { background: var(--accent); border-color: var(--accent); }
 
 /* Inline -/value/+ stepper (modal numeric fields) */
 .stepper { display: inline-flex; align-items: center; gap: 10px; }
