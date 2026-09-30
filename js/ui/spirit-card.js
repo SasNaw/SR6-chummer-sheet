@@ -105,7 +105,7 @@ export function spiritCard(c, spirit) {
   const damage = Math.min(spirit.damage ?? 0, boxes);
   const setServices = (n) => updateCharacter(c.id, (ch) => updateSpirit(ch, spirit.id, { services: Math.max(0, n) }));
   card.append(el('div', { class: 'spirit-trackers' }, [
-    el('span', { class: 'services-label' }, t('conditionMonitor')),
+    el('span', { class: 'services-label' }, `${t('conditionMonitor')} (${damage}/${boxes})`),
     el('span', { class: 'services-label end' }, t('services')),
     el('div', { class: 'cm-boxes', role: 'group', 'aria-label': t('conditionMonitor') },
       Array.from({ length: boxes }, (_, i) => {
