@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createCharacter, createWeapon,
   addWeapon, updateWeapon, removeWeapon, upsertCharacter,
-  addDrone, removeDrone,
+  addDrone, removeDrone, createDrone, normalizeDrone,
 } from '../js/model.js';
 
 test('addWeapon / updateWeapon / removeWeapon', () => {
@@ -27,13 +27,47 @@ test('updateWeapon and removeWeapon no-op on a non-existent id', () => {
   assert.equal(afterRemove.weapons.length, c.weapons.length);
 });
 
-test('addDrone appends a name and dedupes', () => {
+test('addDrone appends a drone by name and dedupes', () => {
   let c = createCharacter({ name: 'T' });
   c = addDrone(c, 'R.E.X.');
   c = addDrone(c, 'Gremlin');
   c = addDrone(c, 'R.E.X.'); // duplicate ignored
-  assert.deepEqual(c.drones, ['R.E.X.', 'Gremlin']);
+  assert.deepEqual(c.drones.map((d) => d.name), ['R.E.X.', 'Gremlin']);
+  assert.equal(c.drones[0].stats, null); // hand-added drones carry no stats
+  assert.equal(c.drones[0].count, 1);
   assert.equal(addDrone(c, ''), c); // empty name is a no-op (same reference)
+});
+
+test('addDrone accepts a full drone object', () => {
+  const d = createDrone({ name: 'Gremlin', ref: 'x', stats: { body: 5 } });
+  const c = addDrone(createCharacter({ name: 'T' }), d);
+  assert.equal(c.drones[0].id, d.id);
+  assert.deepEqual(c.drones[0].stats, { body: 5 });
+  assert.equal(addDrone(c, createDrone({ name: 'Gremlin' })), c); // same name -> no-op
+});
+
+test('createDrone copies stats and defaults the rest', () => {
+  const stats = { handling: '3/5', body: 12 };
+  const d = createDrone({ id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', count: 2, stats });
+  assert.deepEqual(d, {
+    id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', typeName: null,
+    size: null, subtype: null, count: 2, stats: { handling: '3/5', body: 12 },
+  });
+  assert.notEqual(d.stats, stats); // copied, not shared
+});
+
+test('normalizeDrone turns a legacy name string into a drone object', () => {
+  const d = normalizeDrone('R.E.X.');
+  assert.equal(d.name, 'R.E.X.');
+  assert.equal(d.stats, null);
+  assert.equal(typeof d.id, 'string');
+  const obj = createDrone({ name: 'X' });
+  assert.equal(normalizeDrone(obj), obj); // objects pass through
+});
+
+test('createCharacter migrates legacy string drones', () => {
+  const c = createCharacter({ name: 'T', drones: ['R.E.X.'] });
+  assert.equal(c.drones[0].name, 'R.E.X.');
 });
 
 test('removeDrone removes the drone and its mounted weapons', () => {

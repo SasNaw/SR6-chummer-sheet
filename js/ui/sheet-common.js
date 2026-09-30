@@ -54,7 +54,7 @@ export function findW(character, weaponId) {
 // drone referenced by a weapon's mount (preserves explicit order, new ones last).
 export function droneNames(c) {
   return [...new Set([
-    ...(c.drones ?? []),
+    ...(c.drones ?? []).map((d) => (typeof d === 'string' ? d : d.name)),
     ...c.weapons.filter((w) => w.mount !== 'carried').map((w) => w.mount),
   ])];
 }

@@ -32,3 +32,10 @@ test('mergeState upserts incoming characters by id', () => {
   assert.equal(merged.characters.find((c) => c.id === 'a').name, 'A-updated');
   assert.equal(merged.activeId, 'a'); // existing activeId preserved
 });
+
+test('deserialize migrates legacy string drones to objects', () => {
+  const s = deserialize(JSON.stringify({ characters: [{ id: 'a', name: 'A', weapons: [], reserves: [], drones: ['R.E.X.'] }] }));
+  assert.equal(s.characters[0].drones.length, 1);
+  assert.equal(s.characters[0].drones[0].name, 'R.E.X.');
+  assert.equal(s.characters[0].drones[0].stats, null);
+});

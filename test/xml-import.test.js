@@ -124,3 +124,37 @@ test('S4T0: a catalog supplies attack ratings on import', () => {
   // A ref the catalog does not know stays unrated, ready for backfill or editing.
   assert.deepEqual(c.weapons.find((w) => w.ref === 'ares_predator_vi').attackRating, [0, 0, 0, 0, 0]);
 });
+
+// Made-up stats (not rulebook values) keyed by the S4T0 drone refs.
+const DRONE_CAT = { drones: {
+  steel_lynx_combat_drone: { id: 'steel_lynx_combat_drone', name: { en: 'Lynx', de: 'Luchs' }, size: 'DRONE_LARGE', subtype: 'GROUND',
+    stats: { handling: '1/2', acceleration: 3, speedInterval: 4, topSpeed: 5, body: 6, armor: 7, pilot: 8, sensor: 9 } },
+  mct_gnat: { id: 'mct_gnat', name: { en: 'Gnat', de: 'Mücke' }, size: 'DRONE_MICRO', subtype: 'AIR',
+    stats: { handling: '1', acceleration: 1, speedInterval: 1, topSpeed: 1, body: 0, armor: 0, pilot: 1, sensor: 1 } },
+} };
+
+test('S4T0: four drones imported without a drone catalog', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'));
+  assert.deepEqual(c.drones.map((d) => d.name), [
+    'R.E.X. (Steel Lync Combat Drone)', 'Gremlin (MCT-Nissan Roto-Drohne)', 'Mct Gnat', 'Cyberspace Designs Quadrotor',
+  ]);
+  assert.deepEqual(c.drones.map((d) => d.count), [1, 1, 2, 1]);
+  assert.equal(c.drones[0].ref, 'steel_lynx_combat_drone');
+  assert.equal(c.drones[0].size, 'DRONE_LARGE');
+  assert.equal(c.drones[0].subtype, 'GROUND');
+  assert.ok(c.drones.every((d) => d.stats === null));
+});
+
+test('S4T0: a drone catalog supplies stats and names', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'), null, 'de', DRONE_CAT);
+  const rex = c.drones[0];
+  assert.equal(rex.name, 'R.E.X. (Steel Lync Combat Drone)'); // customName wins
+  assert.deepEqual(rex.typeName, { en: 'Lynx', de: 'Luchs' });
+  assert.equal(rex.stats.handling, '1/2');
+  assert.equal(rex.stats.sensor, 9);
+  const gnat = c.drones.find((d) => d.ref === 'mct_gnat');
+  assert.equal(gnat.name, 'Mücke'); // no customName -> localized catalog name
+  assert.equal(c.drones.find((d) => d.ref === 'cyberspace_designs_quadrotor').stats, null); // not in catalog
+  // Mounted weapons still point at their drone by name.
+  assert.equal(c.weapons.filter((w) => w.mount === rex.name).length, 2);
+});

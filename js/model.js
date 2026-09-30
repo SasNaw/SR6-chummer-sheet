@@ -114,7 +114,7 @@ export function createCharacter(props = {}) {
     name, realName, magic,
     weapons: weapons.map((w) => ({ ...w })),
     reserves: reserves.map((r) => ({ ...r })),
-    drones: [...drones],
+    drones: drones.map((d) => ({ ...normalizeDrone(d) })),
     spirits: spirits.map((s) => ({ ...s })),
   };
 }
@@ -259,17 +259,41 @@ export function removeWeapon(character, weaponId) {
   return { ...character, weapons: character.weapons.filter((w) => w.id !== weaponId) };
 }
 
-export function addDrone(character, name) {
+// A drone. Weapons mount on it by `name` (weapon.mount === drone.name). `ref` is
+// the Genesis item id; `typeName` ({en,de}), `size`, `subtype` and `stats` are a
+// snapshot of its drone-catalog entry (null when added by hand or no catalog was
+// loaded), so cards stay renderable after the catalog is cleared. `stats` holds
+// handling (string, e.g. "3/5" on-/off-road), acceleration, speedInterval,
+// topSpeed, body, armor, pilot, sensor.
+export function createDrone(props = {}) {
+  const {
+    name = '', ref = null, typeName = null, size = null, subtype = null, count = 1, stats = null, id,
+  } = props;
+  return {
+    id: id !== undefined ? id : newId(),
+    name, ref, typeName: typeName ? { ...typeName } : null, size, subtype, count,
+    stats: stats ? { ...stats } : null,
+  };
+}
+
+// Drones used to be stored as plain name strings; upgrade those to objects.
+export function normalizeDrone(d) {
+  return typeof d === 'string' ? createDrone({ name: d }) : d;
+}
+
+// Appends a drone (a name or a drone object); no-op for an empty or taken name.
+export function addDrone(character, droneOrName) {
+  const drone = normalizeDrone(droneOrName);
   const drones = character.drones ?? [];
-  if (!name || drones.includes(name)) return character;
-  return { ...character, drones: [...drones, name] };
+  if (!drone.name || drones.some((d) => d.name === drone.name)) return character;
+  return { ...character, drones: [...drones, { ...drone }] };
 }
 
 // Removes the drone and every weapon mounted on it (mount === name).
 export function removeDrone(character, name) {
   return {
     ...character,
-    drones: (character.drones ?? []).filter((d) => d !== name),
+    drones: (character.drones ?? []).filter((d) => d.name !== name),
     weapons: character.weapons.filter((w) => w.mount !== name),
   };
 }

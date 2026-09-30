@@ -5,6 +5,7 @@ import { serialize, deserialize, mergeState } from '../store.js';
 import { upsertCharacter } from '../model.js';
 import { getCatalog, setCatalog, clearCatalog, catalogCount, isWeaponCatalog } from '../catalog.js';
 import { setSpiritCatalog, clearSpiritCatalog, spiritCatalogCount, isSpiritCatalog } from '../spirit-catalog.js';
+import { getDroneCatalog, setDroneCatalog, clearDroneCatalog, droneCatalogCount, isDroneCatalog } from '../drone-catalog.js';
 
 function readFile(accept, cb) {
   const input = el('input', { type: 'file', accept });
@@ -35,7 +36,7 @@ export function renderIoBar(container, { onImported }) {
   const importXml = el('button', {
     onclick: () => readFile('.xml,text/xml', (text) => {
       try {
-        const character = importFromXmlString(text, getCatalog(), getState().lang || 'en');
+        const character = importFromXmlString(text, getCatalog(), getState().lang || 'en', getDroneCatalog());
         mutate((s) => ({ ...s, characters: upsertCharacter(s.characters, character), activeId: character.id }));
         onImported(character.id);
       } catch (e) {
@@ -99,4 +100,22 @@ export function renderIoBar(container, { onImported }) {
     ? el('button', { class: 'danger', onclick: () => { if (confirm(t('clearSpiritCatalogConfirm'))) { clearSpiritCatalog(); rerender(); } } }, t('clearSpiritCatalog'))
     : null;
   container.append(el('div', { class: 'card row' }, [sStatus, loadSpirit, clearSpirit].filter(Boolean)));
+
+  // Drone catalog (on-device, optional): supplies drone stats on XML import.
+  const dCount = droneCatalogCount();
+  const dStatus = el('span', { class: 'muted' }, dCount ? t('droneCatalogStatus', dCount) : t('noDroneCatalog'));
+  const loadDrone = el('button', {
+    onclick: () => readFile('.json,application/json', (text) => {
+      let obj;
+      try { obj = JSON.parse(text); } catch { obj = null; }
+      if (!isDroneCatalog(obj)) { alert(t('droneCatalogInvalid')); return; }
+      setDroneCatalog(obj);
+      alert(t('droneCatalogLoaded', Object.keys(obj.drones).length));
+      rerender();
+    }),
+  }, t('loadDroneCatalog'));
+  const clearDrone = dCount
+    ? el('button', { class: 'danger', onclick: () => { if (confirm(t('clearDroneCatalogConfirm'))) { clearDroneCatalog(); rerender(); } } }, t('clearDroneCatalog'))
+    : null;
+  container.append(el('div', { class: 'card row' }, [dStatus, loadDrone, clearDrone].filter(Boolean)));
 }

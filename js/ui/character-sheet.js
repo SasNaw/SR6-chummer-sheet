@@ -6,6 +6,7 @@ import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
 import { openWeaponModal, openAddDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
+import { droneStats, droneMeta } from './drone-card.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -147,8 +148,13 @@ function weaponsTab(container, c) {
   } else {
     for (const name of droneList) {
       const weapons = c.weapons.filter((w) => w.mount === name);
-      droneChildren.push(el('div', { class: 'row spread' }, [
-        el('span', { class: 'subgroup-title' }, name),
+      const drone = (c.drones ?? []).find((d) => d.name === name);
+      const meta = drone && droneMeta(drone);
+      droneChildren.push(el('div', { class: 'row spread drone-row' }, [
+        el('div', { class: 'drone-head' }, [
+          el('span', { class: 'subgroup-title' }, name),
+          meta ? el('span', { class: 'muted drone-meta' }, meta) : null,
+        ].filter(Boolean)),
         el('div', { class: 'row' }, [
           el('button', { onclick: () => openWeaponModal(c, { mount: name }) }, t('addWeapon')),
           el('button', {
@@ -161,6 +167,7 @@ function weaponsTab(container, c) {
           }, '🗑'),
         ]),
       ]));
+      if (drone && drone.stats) droneChildren.push(droneStats(drone));
       droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, t('noWeapons')));
     }
   }

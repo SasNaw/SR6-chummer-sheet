@@ -1,7 +1,8 @@
-import { createCharacter, createWeapon, createReservePool } from './model.js';
+import { createCharacter, createWeapon, createReservePool, createDrone } from './model.js';
 import { getWeaponDef } from './weapons-db.js';
 import { FIRING_MODE_ROUNDS } from './firing-modes.js';
 import { prettifyRef } from './util.js';
+import { droneEntry } from './drone-catalog.js';
 
 // Resolve a weapon ref to a definition, preferring the loaded catalog (its 200+
 // weapons) over the small built-in table. Returns { name, magazineCapacity,
@@ -19,6 +20,36 @@ function resolveWeaponDef(ref, catalog, lang) {
 }
 
 const MAX_MOUNT_DEPTH = 20;
+
+// Display name for a top-level drone/vehicle item: its customName, else the
+// drone catalog's localized name, else the prettified ref. Mounted weapons use
+// the same name as their `mount`, so the two must agree.
+function ownerName(item, droneCatalog, lang) {
+  const custom = attr(item, 'customName');
+  if (custom) return custom;
+  const ref = attr(item, 'ref');
+  const entry = droneEntry(droneCatalog, ref);
+  const n = entry && entry.name;
+  return (n && ((lang === 'de' && n.de) || n.en)) || prettifyRef(ref);
+}
+
+function parseDrones(items, droneCatalog, lang) {
+  return items
+    .filter((it) => (attr(it, 'type') || '').startsWith('DRONE_') && !attr(it, 'embedin'))
+    .map((it) => {
+      const ref = attr(it, 'ref');
+      const entry = droneEntry(droneCatalog, ref);
+      return createDrone({
+        name: ownerName(it, droneCatalog, lang),
+        ref,
+        typeName: entry ? entry.name : null,
+        size: attr(it, 'type'),
+        subtype: attr(it, 'subtype'),
+        count: parseInt(attr(it, 'count') || '1', 10) || 1,
+        stats: entry ? entry.stats : null,
+      });
+    });
+}
 
 // sr6char stores ammunition quantities in units of 10 rounds (a "count" of 6
 // means 60 rounds). Weapon magazine capacities are already in real rounds.
@@ -55,7 +86,7 @@ function indexItems(items) {
   return { byId, generatedToOwner };
 }
 
-function resolveMount(item, idx) {
+function resolveMount(item, idx, droneCatalog, lang) {
   if (attr(item, 'type') === 'WEAPON_FIREARMS') return 'carried';
   let cur = attr(item, 'embedin');
   const visited = new Set();
@@ -70,7 +101,7 @@ function resolveMount(item, idx) {
     }
     const parentEmbed = attr(owner, 'embedin');
     if (!parentEmbed) {
-      return attr(owner, 'customName') || prettifyRef(attr(owner, 'ref'));
+      return ownerName(owner, droneCatalog, lang);
     }
     cur = parentEmbed;
   }
@@ -104,7 +135,7 @@ function detectMagic(doc) {
   return magicAttr ? parseInt(attr(magicAttr, 'value') || '0', 10) > 0 : false;
 }
 
-export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
+export function parseSr6CharDoc(doc, catalog = null, lang = 'en', droneCatalog = null) {
   const items = Array.from(doc.getElementsByTagName('item'));
   const idx = indexItems(items);
 
@@ -124,7 +155,7 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
     return createWeapon({
       name: def.name,
       ref,
-      mount: resolveMount(it, idx),
+      mount: resolveMount(it, idx, droneCatalog, lang),
       magazineCapacity: def.magazineCapacity,
       ammoCategory: def.ammoCategory,
       firingModes: def.firingModes,
@@ -140,10 +171,11 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en') {
     magic: detectMagic(doc),
     weapons,
     reserves,
+    drones: parseDrones(items, droneCatalog, lang),
   });
 }
 
-export function importFromXmlString(xmlString, catalog = null, lang = 'en') {
+export function importFromXmlString(xmlString, catalog = null, lang = 'en', droneCatalog = null) {
   const doc = new DOMParser().parseFromString(xmlString, 'text/xml');
-  return parseSr6CharDoc(doc, catalog, lang);
+  return parseSr6CharDoc(doc, catalog, lang, droneCatalog);
 }
