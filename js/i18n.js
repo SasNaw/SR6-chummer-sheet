@@ -16,6 +16,10 @@ export const STRINGS = {
     deleteCharacterConfirm: (name) => `Delete "${name}"? This cannot be undone.`,
     characterNotFound: 'Character not found.',
     // IO
+    // Storage health warnings
+    storageRecovered: 'Saved data was unreadable and has been restored from the automatic backup. Check your characters, then export a JSON backup.',
+    storageBlocked: 'Storage cannot be written, so changes will NOT be saved. Export a JSON backup before closing the app.',
+    storageSaveFailed: 'Your last change could not be saved (storage full or unavailable). Export a JSON backup before closing the app.',
     importXml: 'Import XML',
     exportJson: 'Export JSON',
     importJson: 'Import JSON',
@@ -144,6 +148,10 @@ export const STRINGS = {
     del: 'Löschen',
     deleteCharacterConfirm: (name) => `"${name}" löschen? Dies kann nicht rückgängig gemacht werden.`,
     characterNotFound: 'Charakter nicht gefunden.',
+    // Warnungen zum Speicher
+    storageRecovered: 'Gespeicherte Daten waren unlesbar und wurden aus der automatischen Sicherung wiederhergestellt. Prüfe deine Charaktere und erstelle danach einen JSON-Export.',
+    storageBlocked: 'Der Speicher kann nicht beschrieben werden – Änderungen werden NICHT gespeichert. Bitte vor dem Schließen per JSON exportieren.',
+    storageSaveFailed: 'Die letzte Änderung konnte nicht gespeichert werden (Speicher voll oder nicht verfügbar). Bitte vor dem Schließen per JSON exportieren.',
     importXml: 'XML importieren',
     exportJson: 'JSON exportieren',
     importJson: 'JSON importieren',

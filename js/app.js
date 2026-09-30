@@ -1,4 +1,4 @@
-import { loadState, saveState } from './store.js';
+import { loadState, saveState, loadReport } from './store.js';
 import { backfillAttackRatings } from './model.js';
 import { getCatalog } from './catalog.js';
 import { el, clear } from './ui/dom.js';
@@ -24,7 +24,36 @@ let view = (state.activeId && state.characters.some((c) => c.id === state.active
   : { name: 'picker', characterId: null };
 
 export function getState() { return state; }
-export function mutate(fn) { state = fn(state); saveState(state); render(); }
+// A storage problem the user needs to know about: 'recovered', 'blocked',
+// 'quota' or 'write'. Rendered as a banner; cleared by the next good save.
+let storageWarning = (() => {
+  const r = loadReport();
+  if (!r.writable) return 'blocked';
+  if (r.recovered) return 'recovered';
+  return null;
+})();
+
+// Ask the browser to exempt this origin from automatic eviction. Chromium grants
+// it by heuristic (an installed PWA counts); on iOS a home-screen web app is
+// already exempt from ITP's 7-day sweep. Fire-and-forget, once, and only after
+// there is data worth protecting so a first-time visitor is never prompted.
+let persistenceAsked = false;
+function requestPersistence() {
+  if (persistenceAsked) return;
+  persistenceAsked = true;
+  const sm = navigator.storage;
+  if (!sm || !sm.persist || !sm.persisted) return;
+  sm.persisted().then((already) => (already ? null : sm.persist())).catch(() => {});
+}
+
+export function mutate(fn) {
+  state = fn(state);
+  const res = saveState(state);
+  // Render either way: a failed write must not leave the UI frozen on stale data.
+  storageWarning = res.ok ? null : res.reason;
+  if (res.ok && state.characters.length > 0) requestPersistence();
+  render();
+}
 // Translate a key in the current language (used throughout the UI).
 export function t(key, ...params) { return translate(state.lang || 'en', key, ...params); }
 export function rerender() { render(); }
@@ -35,11 +64,18 @@ export function goSheet(characterId) {
   render();
 }
 
+const WARNING_KEYS = {
+  blocked: 'storageBlocked', recovered: 'storageRecovered',
+  quota: 'storageSaveFailed', write: 'storageSaveFailed',
+};
+
 function render() {
   const header = document.getElementById('app-header');
   const root = document.getElementById('app-root');
   clear(header);
   clear(root);
+
+  if (storageWarning) root.append(el('div', { class: 'warn', role: 'alert' }, t(WARNING_KEYS[storageWarning])));
 
   if (view.name === 'sheet') {
     const c = state.characters.find((x) => x.id === view.characterId);
@@ -55,6 +91,7 @@ function render() {
 }
 
 render();
+if (state.characters.length > 0) requestPersistence();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

@@ -89,6 +89,14 @@ input, select {
 .list { display: grid; gap: 10px; }
 .empty { text-align: center; color: var(--muted); padding: 32px 0; }
 
+/* Storage-health banner: shown when a save failed, storage is unwritable, or
+   data was recovered from the backup blob. Deliberately loud — silently
+   losing a character mid-session is the failure this guards against. */
+.warn {
+  background: rgba(255, 92, 92, 0.12); border: 1px solid var(--danger); color: var(--danger);
+  border-radius: var(--radius); padding: 12px 14px; font-size: 13px; line-height: 1.45;
+}
+
 h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .card h2 { min-width: 0; overflow-wrap: anywhere; }
 
