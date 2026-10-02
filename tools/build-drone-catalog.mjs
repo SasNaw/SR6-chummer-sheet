@@ -1,5 +1,6 @@
 // Local-only generator: extracts every SR6 drone (items of type DRONE_*) with its
-// vehicle stats from a licensed Genesis install and writes
+// vehicle stats, the names of autosofts and rigger programs, and every rigger
+// command console with its stats, from a licensed Genesis install and writes
 // data-local/drones-catalog.json (gitignored). This script contains NO rulebook
 // data — only parsing logic. The OUTPUT is licensed content and must never be
 // committed.
@@ -58,6 +59,7 @@ const parser = new DOMParser();
 const num = (v) => (v === null || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
 const drones = {};
 const software = {};
+const consoles = {};
 for (const book of books) {
   const dataDir = join(root, book, 'data');
   for (const f of readdirSync(dataDir)) {
@@ -71,6 +73,21 @@ for (const book of books) {
       const useSub = useas && useas.getAttribute('subtype');
       if (id && !software[id] && (useSub === 'AUTOSOFT' || useSub === 'RIGGER_PROGRAM')) {
         software[id] = { en: namesEn[id] || id, de: namesDe[id] || null };
+      }
+      // Rigger command consoles: Device Rating plus the <cyberdeck> line
+      // (Data Processing, Firewall, program slots).
+      const deck = Array.from(it.childNodes || []).find((n) => n.nodeName === 'cyberdeck');
+      if (id && !consoles[id] && useSub === 'RIGGER_CONSOLE' && deck) {
+        consoles[id] = {
+          id,
+          name: { en: namesEn[id] || id, de: namesDe[id] || null },
+          stats: {
+            deviceRating: num(it.getAttribute('devrat')),
+            dataProcessing: num(deck.getAttribute('d')),
+            firewall: num(deck.getAttribute('f')),
+            programSlots: num(deck.getAttribute('programs')),
+          },
+        };
       }
       if (!id || !type.startsWith('DRONE_') || drones[id]) continue;
       const v = Array.from(it.childNodes || []).find((n) => n.nodeName === 'vehicle');
@@ -96,5 +113,5 @@ for (const book of books) {
 }
 
 mkdirSync('data-local', { recursive: true });
-writeFileSync(OUT, JSON.stringify({ version: 1, drones, software }, null, 2));
-console.log(`Wrote ${OUT} (${Object.keys(drones).length} drones, ${Object.keys(software).length} software)`);
+writeFileSync(OUT, JSON.stringify({ version: 1, drones, software, consoles }, null, 2));
+console.log(`Wrote ${OUT} (${Object.keys(drones).length} drones, ${Object.keys(software).length} software, ${Object.keys(consoles).length} consoles)`);

@@ -1,5 +1,6 @@
 import {
   createCharacter, createWeapon, createReservePool, createDrone, normalizeCharacterDrones, MOUNT_ROUNDS,
+  createRcc, initRccState,
 } from './model.js';
 import { getWeaponDef } from './weapons-db.js';
 import { FIRING_MODE_ROUNDS } from './firing-modes.js';
@@ -83,11 +84,20 @@ function parseSoftware(items, ownerId, catalog, droneCatalog, lang) {
   });
 }
 
-// Software on the character's rigger command console(s), shared with every drone.
-function parseRccSoftware(items, catalog, droneCatalog, lang) {
-  return items
-    .filter((it) => attr(it, 'subtype') === 'RIGGER_CONSOLE')
-    .flatMap((it) => parseSoftware(items, attr(it, 'uniqueid'), catalog, droneCatalog, lang));
+// The character's rigger command console (the first, if there are several):
+// name and stats from the drone catalog's consoles when loaded, plus the
+// software installed on it. null when the character has none.
+function parseRcc(items, catalog, droneCatalog, lang) {
+  const it = items.find((x) => attr(x, 'subtype') === 'RIGGER_CONSOLE');
+  if (!it) return null;
+  const ref = attr(it, 'ref');
+  const entry = droneCatalog && droneCatalog.consoles && droneCatalog.consoles[ref];
+  return createRcc({
+    ref,
+    name: entry ? entry.name : { en: prettifyRef(ref), de: null },
+    stats: entry ? entry.stats : null,
+    software: parseSoftware(items, attr(it, 'uniqueid'), catalog, droneCatalog, lang),
+  });
 }
 
 function parseDrones(items, catalog, droneCatalog, lang) {
@@ -244,15 +254,16 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en', droneCatalog =
     });
   });
 
-  return normalizeCharacterDrones(createCharacter({
+  // After import every drone is slaved and the RCC's program slots are filled.
+  return initRccState(normalizeCharacterDrones(createCharacter({
     name: firstText(doc, 'name'),
     realName: firstText(doc, 'realname'),
     magic: detectMagic(doc),
     weapons,
     reserves,
     drones: parseDrones(items, catalog, droneCatalog, lang),
-    rccSoftware: parseRccSoftware(items, catalog, droneCatalog, lang),
-  }));
+    rcc: parseRcc(items, catalog, droneCatalog, lang),
+  })));
 }
 
 export function importFromXmlString(xmlString, catalog = null, lang = 'en', droneCatalog = null) {

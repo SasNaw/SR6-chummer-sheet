@@ -54,12 +54,18 @@ function labelLine(label, value) {
   return el('div', { class: 'muted' }, [el('span', { class: 'spirit-label' }, `${label}: `), ...[].concat(value)]);
 }
 
-// "Targeting (Roomsweeper) 7, Evasion 7 · RCC": name, bound weapon, rating, and
-// a mark on software shared from the rigger console.
+// One software entry as text: "Targeting (Roomsweeper) 7" — name, bound
+// weapon, rating.
+export function softwareLabel(s, lang) {
+  return `${localizedPair(s.name, lang) || s.ref}${s.target ? ` (${s.target})` : ''}${s.rating != null ? ` ${s.rating}` : ''}`;
+}
+
+// "Targeting (Roomsweeper) 7, Evasion 7 · RCC": each entry's label, plus a mark
+// on software shared from the rigger console.
 function softwareList(list, lang) {
   return list.flatMap((s, i) => [
     i ? ', ' : null,
-    `${localizedPair(s.name, lang) || s.ref}${s.target ? ` (${s.target})` : ''}${s.rating != null ? ` ${s.rating}` : ''}`,
+    softwareLabel(s, lang),
     s.viaRcc ? el('span', { class: 'via-rcc', title: t('viaRccTitle') }, ` · ${t('viaRcc')}`) : null,
   ]).filter(Boolean);
 }
@@ -104,12 +110,15 @@ export function droneCard(c, drone) {
   }
 
   // Details, one "Label: value" row each (omitted when empty): initiative, then
-  // the autosofts and programs running on the drone. Its weapons have their own
-  // cards below this one on the Drones tab.
+  // the autosofts (own, then RCC) and programs running on the drone. Its
+  // weapons have their own cards below this one on the Drones tab.
   const { autosofts, programs } = droneSoftware(c, drone);
   const details = [
     labelLine(t('initiativeLabel'), droneInitiative(drone)),
-    autosofts.length ? labelLine(t('autosoftsLabel'), softwareList(autosofts, lang)) : null,
+    // Autosofts split by source: installed on the drone, and shared by the RCC
+    // (the line's label says where they come from, so no per-entry mark).
+    labelLine(t('autosoftsLabel'), softwareList(autosofts.filter((s) => !s.viaRcc), lang)),
+    labelLine(t('rccAutosoftsLabel'), softwareList(autosofts.filter((s) => s.viaRcc).map((s) => ({ ...s, viaRcc: false })), lang)),
     programs.length ? labelLine(t('programsLabel'), softwareList(programs, lang)) : null,
   ].filter(Boolean);
   if (details.length) {

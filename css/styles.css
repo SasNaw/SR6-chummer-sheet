@@ -241,7 +241,12 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .drone-weapons { display: grid; gap: 10px; }
 .drone-weapons .card { background: var(--bg); padding: 16px 18px; }
 .drone-add-weapon { justify-content: flex-end; }
-.theme-drones > .list { gap: 18px; }
+.drone-list { gap: 18px; }
+/* RCC card: a heading over a wrapping row of chips per section (running /
+   installed programs, slaved drones). Chips are the toggle buttons, compacted. */
+.rcc-section { display: grid; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { min-height: 36px; padding: 6px 10px; font-size: 13px; }
 
 /* Software shared from the rigger console: marked, a step quieter. */
 .via-rcc { font-size: 11px; letter-spacing: 0.04em; opacity: 0.75; }

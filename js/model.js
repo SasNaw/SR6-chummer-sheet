@@ -120,7 +120,7 @@ export function weaponDisplayName(weapon) {
 
 export function createCharacter(props = {}) {
   const {
-    name = '', realName = '', weapons = [], reserves = [], drones = [], spirits = [], rccSoftware = [], magic = false, id,
+    name = '', realName = '', weapons = [], reserves = [], drones = [], spirits = [], rcc = null, magic = false, id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
@@ -129,8 +129,8 @@ export function createCharacter(props = {}) {
     reserves: reserves.map((r) => ({ ...r })),
     drones: drones.map((d) => ({ ...normalizeDrone(d) })),
     spirits: spirits.map((s) => ({ ...s })),
-    // Software on the character's rigger command console, shared with every drone.
-    rccSoftware: copySoftware(rccSoftware),
+    // The character's rigger command console (createRcc), or null.
+    rcc: rcc ? createRcc(rcc) : null,
   };
 }
 
@@ -292,9 +292,73 @@ export function createDrone(props = {}) {
 }
 
 // Drone/RCC software entries: { ref, kind: 'autosoft' | 'program',
-// name: {en,de}, rating: number|null, target: weapon name|null }.
+// name: {en,de}, rating: number|null, target: weapon name|null } — RCC entries
+// also carry an id (see createRcc).
 function copySoftware(list) {
   return list.map((s) => ({ ...s, name: s.name ? { ...s.name } : s.name }));
+}
+
+// A rigger command console: catalog snapshot (name, stats: { deviceRating,
+// dataProcessing, firewall, programSlots } or null), its installed software
+// (each given an id), which of it is running (software ids, at most
+// programSlots) and which drones are slaved to it (drone ids).
+export function createRcc(props = {}) {
+  const { ref = null, name = null, stats = null, software = [], running = [], slaved = [] } = props;
+  return {
+    ref, name: name ? { ...name } : null, stats: stats ? { ...stats } : null,
+    software: copySoftware(software).map((sw) => ({ ...sw, id: sw.id ?? newId() })),
+    running: [...running], slaved: [...slaved],
+  };
+}
+
+// Post-import RCC state: every drone slaved, and programs started in installed
+// order until the program slots are full (all of them when the slot count is
+// unknown). No-op without an RCC.
+export function initRccState(character) {
+  const { rcc } = character;
+  if (!rcc) return character;
+  const slots = rccProgramSlots(rcc);
+  const ids = rcc.software.map((sw) => sw.id);
+  return {
+    ...character,
+    rcc: {
+      ...rcc,
+      running: slots == null ? ids : ids.slice(0, slots),
+      slaved: (character.drones ?? []).map((d) => d.id),
+    },
+  };
+}
+
+// How many programs the RCC can run at once; null when unknown (no stats).
+export function rccProgramSlots(rcc) {
+  const n = rcc && rcc.stats && rcc.stats.programSlots;
+  return typeof n === 'number' ? n : null;
+}
+
+// Starts an installed program; no-op when it is already running, unknown, or
+// every program slot is taken.
+export function startRccProgram(character, softwareId) {
+  const { rcc } = character;
+  if (!rcc || rcc.running.includes(softwareId) || !rcc.software.some((sw) => sw.id === softwareId)) return character;
+  const slots = rccProgramSlots(rcc);
+  if (slots != null && rcc.running.length >= slots) return character;
+  return { ...character, rcc: { ...rcc, running: [...rcc.running, softwareId] } };
+}
+
+export function stopRccProgram(character, softwareId) {
+  const { rcc } = character;
+  if (!rcc || !rcc.running.includes(softwareId)) return character;
+  return { ...character, rcc: { ...rcc, running: rcc.running.filter((x) => x !== softwareId) } };
+}
+
+// Slaves a drone to the RCC, or releases it when it already is.
+export function toggleRccSlave(character, droneId) {
+  const { rcc } = character;
+  if (!rcc || !(character.drones ?? []).some((d) => d.id === droneId)) return character;
+  const slaved = rcc.slaved.includes(droneId)
+    ? rcc.slaved.filter((x) => x !== droneId)
+    : [...rcc.slaved, droneId];
+  return { ...character, rcc: { ...rcc, slaved } };
 }
 
 // Drones used to be stored as plain name strings; upgrade those to objects.
@@ -309,6 +373,20 @@ export function normalizeDrone(d) {
 // mount with no drone of that name (older data, or a non-drone vehicle) gets a
 // stats-less drone, so its weapons have a drone card to sit under.
 export function normalizeCharacterDrones(character) {
+  return migrateRccSoftware(normalizeDroneList(character));
+}
+
+// An earlier shape kept the console's software as a plain character-level
+// rccSoftware list; it becomes an RCC (unknown console, no stats) with the
+// post-import defaults.
+function migrateRccSoftware(character) {
+  if (!Array.isArray(character.rccSoftware)) return character;
+  const { rccSoftware, ...rest } = character;
+  if (rest.rcc || rccSoftware.length === 0) return rest;
+  return initRccState({ ...rest, rcc: createRcc({ name: { en: 'RCC', de: null }, software: rccSoftware }) });
+}
+
+function normalizeDroneList(character) {
   const mounts = [...new Set((character.weapons ?? []).map((w) => w.mount).filter((m) => m && m !== 'carried'))];
   if (!Array.isArray(character.drones) && mounts.length === 0) return character;
   const renamed = new Map();
@@ -334,13 +412,19 @@ export function addDrone(character, droneOrName) {
   const drone = normalizeDrone(droneOrName);
   const drones = character.drones ?? [];
   if (!drone.name || drones.some((d) => d.name === drone.name)) return character;
-  return { ...character, drones: [...drones, { ...drone }] };
+  // A new drone joins the rigger's network: slaved to the RCC, if there is one.
+  const rcc = character.rcc ? { ...character.rcc, slaved: [...character.rcc.slaved, drone.id] } : character.rcc;
+  return { ...character, drones: [...drones, { ...drone }], ...(rcc ? { rcc } : {}) };
 }
 
-// Removes the drone and every weapon mounted on it (mount === name).
+// Removes the drone and every weapon mounted on it (mount === name), and
+// releases it from the RCC.
 export function removeDrone(character, name) {
+  const gone = (character.drones ?? []).filter((d) => d.name === name).map((d) => d.id);
+  const rcc = character.rcc && { ...character.rcc, slaved: character.rcc.slaved.filter((x) => !gone.includes(x)) };
   return {
     ...character,
+    ...(rcc ? { rcc } : {}),
     drones: (character.drones ?? []).filter((d) => d.name !== name),
     weapons: character.weapons.filter((w) => w.mount !== name),
   };
@@ -381,12 +465,17 @@ export function droneInitiative(drone) {
   return typeof pilot === 'number' ? `${pilot * 2} + 3D6` : null;
 }
 
-// The software running on a drone: its own first, then the rigger console's
-// (shared with every drone, marked viaRcc), split into autosofts and programs.
+// The software running on a drone: its own first, then the programs currently
+// running on the rigger console (marked viaRcc) — those only while the drone
+// is slaved to it — split into autosofts and programs.
 export function droneSoftware(character, drone) {
+  const { rcc } = character;
+  const shared = rcc && rcc.slaved.includes(drone.id)
+    ? rcc.software.filter((s) => rcc.running.includes(s.id))
+    : [];
   const all = [
     ...(drone.software ?? []).map((s) => ({ ...s, viaRcc: false })),
-    ...(character.rccSoftware ?? []).map((s) => ({ ...s, viaRcc: true })),
+    ...shared.map((s) => ({ ...s, viaRcc: true })),
   ];
   return {
     autosofts: all.filter((s) => s.kind === 'autosoft'),

@@ -7,6 +7,7 @@ import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
 import { openWeaponModal, openDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
 import { droneCard } from './drone-card.js';
+import { rccCard } from './rcc-card.js';
 
 function weaponList(c, weapons, stashable) {
   const list = el('div', { class: 'list' });
@@ -111,15 +112,20 @@ export function renderSheet(container, characterId) {
   container.append(sheet);
 }
 
-// Drones tab: one card per drone that also holds the weapons mounted on it
-// (inset weapon cards) and a + Weapon for that drone, so each drone reads as one
-// group; then the reserve ammo (the same pools as on the Weapons tab).
+// Drones tab, in three headed sections like Reserve ammo: RCCs (the rigger
+// command console, if the character has one); Drones, one card per drone that
+// also holds the weapons mounted on it (inset weapon cards) and a + Weapon for
+// that drone, so each drone reads as one group; then the reserve ammo (the same
+// pools as on the Weapons tab).
 function dronesTab(container, c) {
-  const drones = c.drones ?? [];
-  if (drones.length === 0) {
-    container.append(el('div', { class: 'muted' }, t('noDrones')));
+  const sectionTitle = (text) => el('div', { class: 'section-title' }, [el('h2', {}, text)]);
+  if (c.rcc) {
+    container.append(el('div', { class: 'group' }, [sectionTitle(t('rccs')), rccCard(c)]));
   }
-  const list = el('div', { class: 'list' });
+
+  const drones = c.drones ?? [];
+  const list = el('div', { class: 'list drone-list' });
+  if (drones.length === 0) list.append(el('div', { class: 'muted' }, t('noDrones')));
   for (const d of drones) {
     const weapons = c.weapons.filter((w) => w.mount === d.name);
     const card = droneCard(c, d);
@@ -132,7 +138,7 @@ function dronesTab(container, c) {
     ]));
     list.append(card);
   }
-  container.append(list);
+  container.append(el('div', { class: 'group' }, [sectionTitle(t('drones')), list]));
   container.append(reserveSection(c));
 }
 

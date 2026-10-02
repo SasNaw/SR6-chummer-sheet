@@ -61,27 +61,23 @@ test('droneInitiative: Pilot × 2 + 3D6; null without a Pilot stat', () => {
   assert.equal(droneInitiative({ stats: {} }), null);
 });
 
-test('createDrone and createCharacter copy software lists', () => {
+test('createDrone copies its software list', () => {
   const sw = [{ ref: 'evasion', kind: 'autosoft', name: { en: 'Evasion', de: null }, rating: 7, target: null }];
   const d = createDrone({ name: 'x', software: sw });
   assert.deepEqual(d.software, sw);
   assert.notEqual(d.software, sw);
   assert.notEqual(d.software[0], sw[0]);
   assert.deepEqual(createDrone({ name: 'x' }).software, []);
-  const c = createCharacter({ name: 'T', rccSoftware: sw });
-  assert.deepEqual(c.rccSoftware, sw);
-  assert.notEqual(c.rccSoftware, sw);
-  assert.deepEqual(createCharacter({ name: 'T' }).rccSoftware, []);
 });
 
-test('droneSoftware: own software first, then RCC software marked, split by kind', () => {
-  const sw = (ref, kind) => ({ ref, kind, name: { en: ref, de: null }, rating: null, target: null });
-  const drone = { software: [sw('targeting', 'autosoft')] };
-  const c = { rccSoftware: [sw('scrubber', 'program'), sw('evasion', 'autosoft')] };
+test('droneSoftware: own software first, then running RCC software marked, split by kind', () => {
+  const sw = (ref, kind) => ({ id: ref, ref, kind, name: { en: ref, de: null }, rating: null, target: null });
+  const drone = { id: 'd', software: [sw('targeting', 'autosoft')] };
+  const c = { rcc: { software: [sw('scrubber', 'program'), sw('evasion', 'autosoft')], running: ['scrubber', 'evasion'], slaved: ['d'] } };
   const { autosofts, programs } = droneSoftware(c, drone);
   assert.deepEqual(autosofts.map((s) => [s.ref, s.viaRcc]), [['targeting', false], ['evasion', true]]);
   assert.deepEqual(programs.map((s) => [s.ref, s.viaRcc]), [['scrubber', true]]);
-  // Older stored data without software lists.
+  // Older stored data without software lists or an RCC.
   assert.deepEqual(droneSoftware({}, {}), { autosofts: [], programs: [] });
 });
 

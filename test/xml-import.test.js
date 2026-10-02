@@ -174,7 +174,7 @@ test('S4T0: software installed on a drone is imported onto that drone', () => {
 
 test('S4T0: rigger console software is imported as shared RCC software', () => {
   const c = parseSr6CharDoc(load('S4T0.xml'));
-  assert.deepEqual(c.rccSoftware.map((s) => [s.ref, s.kind, s.name.en, s.rating]), [
+  assert.deepEqual(c.rcc.software.map((s) => [s.ref, s.kind, s.name.en, s.rating]), [
     ['signal_scrubber_rig', 'program', 'Signal Scrubber', null],
     ['evasion', 'autosoft', 'Evasion', 7],
     ['clearsight', 'autosoft', 'Clearsight', 7],
@@ -182,15 +182,15 @@ test('S4T0: rigger console software is imported as shared RCC software', () => {
     ['stealth_auto', 'autosoft', 'Stealth', 7],
     ['targeting', 'autosoft', 'Targeting', 7],
   ]);
-  assert.equal(c.rccSoftware[5].target, 'FN HAR');
+  assert.equal(c.rcc.software[5].target, 'FN HAR');
   // The commlink's basic program is not rigger software.
-  assert.ok(!c.rccSoftware.some((s) => s.ref === 'browse'));
+  assert.ok(!c.rcc.software.some((s) => s.ref === 'browse'));
 });
 
 test('a drone catalog supplies software names', () => {
   const cat = { ...DRONE_CAT, software: { evasion: { en: 'Evade', de: 'Ausweichen' } } };
   const c = parseSr6CharDoc(load('S4T0.xml'), null, 'de', cat);
-  assert.deepEqual(c.rccSoftware.find((s) => s.ref === 'evasion').name, { en: 'Evade', de: 'Ausweichen' });
+  assert.deepEqual(c.rcc.software.find((s) => s.ref === 'evasion').name, { en: 'Evade', de: 'Ausweichen' });
 });
 
 test('S4T0: every drone-mounted weapon has a drone to show it under', () => {
@@ -224,4 +224,25 @@ test('a heavy weapon mount or turret holds 500 rounds; other mounts 250', () => 
   assert.equal(cap('weapon_mount_small'), 250);
   assert.equal(cap('weapon_turret_standard'), 250);
   assert.equal(parse(xml('weapon_mount_heavy')).weapons[0].loaded.count, 500);
+});
+
+test('S4T0: the rigger console is imported with all drones slaved and its slots filled', () => {
+  const plain = parseSr6CharDoc(load('S4T0.xml'));
+  assert.equal(plain.rcc.ref, 'proteus_poseidon');
+  assert.deepEqual(plain.rcc.name, { en: 'Proteus Poseidon', de: null }); // prettified without a catalog
+  assert.equal(plain.rcc.stats, null);
+  assert.equal(plain.rcc.running.length, 6); // no slot count known -> all run
+  assert.deepEqual(plain.rcc.slaved, plain.drones.map((d) => d.id));
+
+  const cat = { ...DRONE_CAT, consoles: { proteus_poseidon: {
+    name: { en: 'Proteus Poseidon', de: 'Proteus Poseidon' },
+    stats: { deviceRating: 5, dataProcessing: 5, firewall: 6, programSlots: 5 },
+  } } };
+  const c = parseSr6CharDoc(load('S4T0.xml'), null, 'en', cat);
+  assert.deepEqual(c.rcc.stats, { deviceRating: 5, dataProcessing: 5, firewall: 6, programSlots: 5 });
+  assert.deepEqual(c.rcc.running, c.rcc.software.slice(0, 5).map((s) => s.id));
+});
+
+test('no rigger console: rcc is null', () => {
+  assert.equal(parse('<sr6char><name>X</name></sr6char>').rcc, null);
 });
