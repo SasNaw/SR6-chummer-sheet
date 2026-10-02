@@ -1,11 +1,11 @@
 import { el } from './dom.js';
 import { getState, t, rerender } from '../app.js';
-import { setReserveCount, removeReserve, removeDrone } from '../model.js';
-import { updateCharacter, catName, typeNameL, droneNames } from './sheet-common.js';
+import { setReserveCount, removeReserve } from '../model.js';
+import { updateCharacter, catName, typeNameL } from './sheet-common.js';
 import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
-import { openWeaponModal, openAddDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
+import { openWeaponModal, openDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
 import { droneCard } from './drone-card.js';
 
 function weaponList(c, weapons, stashable) {
@@ -68,11 +68,10 @@ export function renderSheet(container, characterId) {
 
   if (characterId !== activeTabCharId) { activeTab = 'weapons'; activeTabCharId = characterId; }
   const magical = !!c.magic;
-  const hasDrones = (c.drones ?? []).length > 0;
-  // The Magic tab only exists for magical characters and the Drones tab only for
-  // characters with drones; fall back to weapons otherwise.
+  // The Magic tab only exists for magical characters; fall back to weapons
+  // otherwise. The Drones tab is always there (it is where drones are added).
   const tab = (magical && activeTab === 'magic') ? 'magic'
-    : (hasDrones && activeTab === 'drones') ? 'drones' : 'weapons';
+    : activeTab === 'drones' ? 'drones' : 'weapons';
 
   const tabBtn = (id, label) => el('button', {
     class: id === tab ? 'tab active' : 'tab',
@@ -86,16 +85,19 @@ export function renderSheet(container, characterId) {
   const theme = { magic: ' theme-magic', drones: ' theme-drones' }[tab] || '';
   const sheet = el('div', { class: `sheet${theme}` });
 
-  // Clickable section tabs. The contextual + Weapon action shows on the Weapons tab.
+  // Clickable section tabs, with the tab's contextual add action on the right:
+  // + Weapon on Weapons, + Drone on Drones.
   sheet.append(el('div', { class: 'tabs' }, [
     el('div', { class: 'tablist', role: 'tablist' }, [
       tabBtn('weapons', t('weapons')),
-      hasDrones ? tabBtn('drones', t('drones')) : null,
+      tabBtn('drones', t('drones')),
       magical ? tabBtn('magic', t('magic')) : null,
     ]),
     tab === 'weapons'
       ? el('button', { onclick: () => openWeaponModal(c, { mount: 'carried' }) }, t('addWeapon'))
-      : null,
+      : tab === 'drones'
+        ? el('button', { onclick: () => openDroneModal(c) }, t('addDrone'))
+        : null,
   ]));
 
   if (tab === 'magic') {
@@ -109,12 +111,29 @@ export function renderSheet(container, characterId) {
   container.append(sheet);
 }
 
-// Drones tab: one read-only stat card per drone. Adding/removing drones and their
-// mounted weapons stays in the Weapons tab's Drones section.
+// Drones tab: one card per drone that also holds the weapons mounted on it
+// (inset weapon cards) and a + Weapon for that drone, so each drone reads as one
+// group; then the reserve ammo (the same pools as on the Weapons tab).
 function dronesTab(container, c) {
+  const drones = c.drones ?? [];
+  if (drones.length === 0) {
+    container.append(el('div', { class: 'muted' }, t('noDrones')));
+  }
   const list = el('div', { class: 'list' });
-  for (const d of c.drones) list.append(droneCard(d));
+  for (const d of drones) {
+    const weapons = c.weapons.filter((w) => w.mount === d.name);
+    const card = droneCard(c, d);
+    card.append(el('hr', { class: 'card-sep' }));
+    card.append(el('div', { class: 'drone-weapons' }, [
+      weapons.length ? weaponList(c, weapons, false) : null,
+      el('div', { class: 'row drone-add-weapon' }, [
+        el('button', { onclick: () => openWeaponModal(c, { mount: d.name }) }, t('addWeapon')),
+      ]),
+    ]));
+    list.append(card);
+  }
   container.append(list);
+  container.append(reserveSection(c));
 }
 
 function magicTab(container, c) {
@@ -140,11 +159,10 @@ function magicTab(container, c) {
 }
 
 function weaponsTab(container, c) {
-  // Runner weapons (personally carried) vs drone-mounted weapons.
+  // Personally carried weapons only; drone-mounted ones live on the Drones tab.
   const runner = c.weapons.filter((w) => w.mount === 'carried');
   const carrying = runner.filter((w) => !w.stashed);
   const stashed = runner.filter((w) => w.stashed);
-  const droneList = droneNames(c);
 
   // Runner weapons: Equipped / Unequipped sub-headers (the Weapons tab is the header).
   container.append(el('div', { class: 'group' }, [
@@ -153,35 +171,6 @@ function weaponsTab(container, c) {
     el('div', { class: 'subgroup-title' }, t('unequipped')),
     stashed.length ? weaponList(c, stashed, true) : el('div', { class: 'muted' }, t('nothingUnequipped')),
   ]));
-
-  // Drones section: + Drone button; a sub-header per drone with a delete control.
-  const droneChildren = [el('div', { class: 'section-title' }, [
-    el('h2', {}, t('drones')),
-    el('button', { onclick: () => openAddDroneModal(c) }, t('addDrone')),
-  ])];
-  if (droneList.length === 0) {
-    droneChildren.push(el('div', { class: 'muted' }, t('noDrones')));
-  } else {
-    for (const name of droneList) {
-      const weapons = c.weapons.filter((w) => w.mount === name);
-      droneChildren.push(el('div', { class: 'row spread' }, [
-        el('span', { class: 'subgroup-title' }, name),
-        el('div', { class: 'row' }, [
-          el('button', { onclick: () => openWeaponModal(c, { mount: name }) }, t('addWeapon')),
-          el('button', {
-            class: 'icon danger', title: t('deleteDrone'),
-            onclick: () => {
-              if (confirm(t('deleteDroneConfirm', name, weapons.length))) {
-                updateCharacter(c.id, (ch) => removeDrone(ch, name));
-              }
-            },
-          }, '🗑'),
-        ]),
-      ]));
-      droneChildren.push(weapons.length ? weaponList(c, weapons, false) : el('div', { class: 'muted' }, t('noWeapons')));
-    }
-  }
-  container.append(el('div', { class: 'group' }, droneChildren));
 
   // Reserve ammo: its own top-level section.
   container.append(reserveSection(c));

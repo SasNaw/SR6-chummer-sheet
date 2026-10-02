@@ -44,7 +44,8 @@ test('S4T0: a catalog overrides the built-in weapon defs on import', () => {
     },
   };
   const c = parseSr6CharDoc(load('S4T0.xml'), catalog, 'de');
-  const har = c.weapons.find((w) => w.ref === 'fn_har');
+  // The carried one: drone-mounted weapons take their capacity from the mount.
+  const har = c.weapons.find((w) => w.ref === 'fn_har' && w.mount === 'carried');
   assert.equal(har.name, 'FN Sturmgewehr');         // localized catalog name
   assert.equal(har.magazineCapacity, 35);            // catalog value, not built-in 20
   assert.deepEqual(har.firingModes, [{ mode: 'SA', rounds: 2 }, { mode: 'BF', rounds: 4 }, { mode: 'FA', rounds: 10 }]);
@@ -68,7 +69,8 @@ test('S4T0: five deduped firearms with correct mounts', () => {
 
 test('S4T0: weapon defs and full magazines applied', () => {
   const c = parseSr6CharDoc(load('S4T0.xml'));
-  const har = c.weapons.find((w) => w.ref === 'fn_har');
+  // The carried one: drone-mounted weapons take their capacity from the mount.
+  const har = c.weapons.find((w) => w.ref === 'fn_har' && w.mount === 'carried');
   assert.equal(har.ammoCategory, 'ammo_rifles');
   assert.equal(har.magazineCapacity, 20);
   assert.equal(har.loaded.count, 20);
@@ -158,4 +160,68 @@ test('S4T0: a drone catalog supplies stats and names', () => {
   assert.equal(c.drones.find((d) => d.ref === 'cyberspace_designs_quadrotor').stats, null); // not in catalog
   // Mounted weapons still point at their drone by name.
   assert.equal(c.weapons.filter((w) => w.mount === rex.name).length, 2);
+});
+
+test('S4T0: software installed on a drone is imported onto that drone', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'));
+  const rex = c.drones[0];
+  // Targeting's choice names the weapon it is bound to.
+  assert.deepEqual(rex.software, [
+    { ref: 'targeting', kind: 'autosoft', name: { en: 'Targeting', de: null }, rating: 7, target: 'Remington Roomsweeper' },
+  ]);
+  assert.deepEqual(c.drones.find((d) => d.ref === 'mct_gnat').software, []);
+});
+
+test('S4T0: rigger console software is imported as shared RCC software', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'));
+  assert.deepEqual(c.rccSoftware.map((s) => [s.ref, s.kind, s.name.en, s.rating]), [
+    ['signal_scrubber_rig', 'program', 'Signal Scrubber', null],
+    ['evasion', 'autosoft', 'Evasion', 7],
+    ['clearsight', 'autosoft', 'Clearsight', 7],
+    ['maneuvering', 'autosoft', 'Maneuvering', 7],
+    ['stealth_auto', 'autosoft', 'Stealth', 7],
+    ['targeting', 'autosoft', 'Targeting', 7],
+  ]);
+  assert.equal(c.rccSoftware[5].target, 'FN HAR');
+  // The commlink's basic program is not rigger software.
+  assert.ok(!c.rccSoftware.some((s) => s.ref === 'browse'));
+});
+
+test('a drone catalog supplies software names', () => {
+  const cat = { ...DRONE_CAT, software: { evasion: { en: 'Evade', de: 'Ausweichen' } } };
+  const c = parseSr6CharDoc(load('S4T0.xml'), null, 'de', cat);
+  assert.deepEqual(c.rccSoftware.find((s) => s.ref === 'evasion').name, { en: 'Evade', de: 'Ausweichen' });
+});
+
+test('S4T0: every drone-mounted weapon has a drone to show it under', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'));
+  const names = new Set(c.drones.map((d) => d.name));
+  assert.ok(c.weapons.filter((w) => w.mount !== 'carried').every((w) => names.has(w.mount)));
+});
+
+test('S4T0: drone weapons hold 250 rounds in a standard weapon mount', () => {
+  const c = parseSr6CharDoc(load('S4T0.xml'));
+  const mounted = c.weapons.filter((w) => w.mount !== 'carried');
+  assert.ok(mounted.length > 0);
+  for (const w of mounted) {
+    assert.equal(w.magazineCapacity, 250, w.name);
+    assert.equal(w.loaded.count, 250, w.name);
+  }
+  // Carried weapons keep their own magazine.
+  assert.ok(c.weapons.filter((w) => w.mount === 'carried').every((w) => w.magazineCapacity !== 250));
+});
+
+test('a heavy weapon mount or turret holds 500 rounds; other mounts 250', () => {
+  const xml = (mountRef) => `<sr6char><name>R</name><gear>
+    <item count="1" ref="steel_lynx_combat_drone" subtype="GROUND" type="DRONE_LARGE" uniqueid="d1"/>
+    <item count="1" embedin="d1" ref="${mountRef}" slot="VEHICLE_BODY" subtype="MOD_MOUNT" type="ACCESSORY" uniqueid="m1"/>
+    <item count="1" embedin="m1" ref="fn_har" slot="VEHICLE_WEAPON" subtype="RIFLE_ASSAULT" type="ACCESSORY" uniqueid="w1"/>
+  </gear></sr6char>`;
+  const cap = (ref) => parse(xml(ref)).weapons[0].magazineCapacity;
+  assert.equal(cap('weapon_mount_heavy'), 500);
+  assert.equal(cap('weapon_turret_heavy_manual'), 500);
+  assert.equal(cap('weapon_mount_standard'), 250);
+  assert.equal(cap('weapon_mount_small'), 250);
+  assert.equal(cap('weapon_turret_standard'), 250);
+  assert.equal(parse(xml('weapon_mount_heavy')).weapons[0].loaded.count, 500);
 });

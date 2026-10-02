@@ -54,3 +54,16 @@ test('deserialize splits a grouped drone (count > 1) into numbered drones', () =
   assert.ok(c.drones.every((d) => !('count' in d)));
   assert.equal(c.weapons[0].mount, 'MCT Gnat 1'); // mounted weapons follow the first
 });
+
+test('deserialize gives weapon mounts without a drone their own drone', () => {
+  const s = deserialize(JSON.stringify({ characters: [
+    {
+      id: 'a', name: 'A', reserves: [], drones: [{ id: 'r', name: 'R.E.X.' }],
+      weapons: [{ id: 'w1', mount: 'R.E.X.' }, { id: 'w2', mount: 'Vehicle' }, { id: 'w3', mount: 'Vehicle' }, { id: 'w4', mount: 'carried' }],
+    },
+    { id: 'b', name: 'B', reserves: [], weapons: [{ id: 'w5', mount: 'Gremlin' }] }, // legacy: no drones array
+  ] }));
+  assert.deepEqual(s.characters[0].drones.map((d) => d.name), ['R.E.X.', 'Vehicle']);
+  assert.equal(s.characters[0].drones[1].stats, null);
+  assert.deepEqual(s.characters[1].drones.map((d) => d.name), ['Gremlin']);
+});

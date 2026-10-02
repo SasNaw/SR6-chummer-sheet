@@ -49,12 +49,3 @@ export function updateCharacter(characterId, fn) {
 export function findW(character, weaponId) {
   return character.weapons.find((x) => x.id === weaponId);
 }
-
-// All drone names for a character: the explicit drones list unioned with any
-// drone referenced by a weapon's mount (preserves explicit order, new ones last).
-export function droneNames(c) {
-  return [...new Set([
-    ...(c.drones ?? []).map((d) => (typeof d === 'string' ? d : d.name)),
-    ...c.weapons.filter((w) => w.mount !== 'carried').map((w) => w.mount),
-  ])];
-}

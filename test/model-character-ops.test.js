@@ -50,7 +50,7 @@ test('createDrone copies stats and defaults the rest', () => {
   const d = createDrone({ id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', stats });
   assert.deepEqual(d, {
     id: 'd1', name: 'R.E.X.', ref: 'steel_lynx_combat_drone', typeName: null,
-    size: null, subtype: null, stats: { handling: '3/5', body: 12 },
+    size: null, subtype: null, stats: { handling: '3/5', body: 12 }, damage: 0, software: [],
   });
   assert.notEqual(d.stats, stats); // copied, not shared
 });

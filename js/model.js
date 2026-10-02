@@ -40,6 +40,17 @@ export function createWeapon(props = {}) {
   };
 }
 
+// SR6 weapon mounts: a standard mount holds 250 rounds, a heavy one up to 500
+// rounds of belt ammo. Every drone/vehicle weapon holds one of the two, so a
+// mounted weapon's capacity comes from its mount, not its own magazine.
+export const MOUNT_ROUNDS = { standard: 250, heavy: 500 };
+
+// The mount a weapon sits in, read back from its capacity ('heavy' at 500,
+// otherwise 'standard').
+export function mountSize(weapon) {
+  return weapon.magazineCapacity === MOUNT_ROUNDS.heavy ? 'heavy' : 'standard';
+}
+
 // Returns a whole weapon (like the round ops) so the UI can hand it straight to
 // updateWeapon as `changes`.
 export function setAttackRating(weapon, values) {
@@ -108,7 +119,9 @@ export function weaponDisplayName(weapon) {
 }
 
 export function createCharacter(props = {}) {
-  const { name = '', realName = '', weapons = [], reserves = [], drones = [], spirits = [], magic = false, id } = props;
+  const {
+    name = '', realName = '', weapons = [], reserves = [], drones = [], spirits = [], rccSoftware = [], magic = false, id,
+  } = props;
   return {
     id: id !== undefined ? id : newId(),
     name, realName, magic,
@@ -116,6 +129,8 @@ export function createCharacter(props = {}) {
     reserves: reserves.map((r) => ({ ...r })),
     drones: drones.map((d) => ({ ...normalizeDrone(d) })),
     spirits: spirits.map((s) => ({ ...s })),
+    // Software on the character's rigger command console, shared with every drone.
+    rccSoftware: copySoftware(rccSoftware),
   };
 }
 
@@ -267,13 +282,19 @@ export function removeWeapon(character, weaponId) {
 // topSpeed, body, armor, pilot, sensor.
 export function createDrone(props = {}) {
   const {
-    name = '', ref = null, typeName = null, size = null, subtype = null, stats = null, id,
+    name = '', ref = null, typeName = null, size = null, subtype = null, stats = null, damage = 0, software = [], id,
   } = props;
   return {
     id: id !== undefined ? id : newId(),
     name, ref, typeName: typeName ? { ...typeName } : null, size, subtype,
-    stats: stats ? { ...stats } : null,
+    stats: stats ? { ...stats } : null, damage, software: copySoftware(software),
   };
+}
+
+// Drone/RCC software entries: { ref, kind: 'autosoft' | 'program',
+// name: {en,de}, rating: number|null, target: weapon name|null }.
+function copySoftware(list) {
+  return list.map((s) => ({ ...s, name: s.name ? { ...s.name } : s.name }));
 }
 
 // Drones used to be stored as plain name strings; upgrade those to objects.
@@ -284,11 +305,14 @@ export function normalizeDrone(d) {
 // Upgrades a character's stored drones to the current shape: legacy name strings
 // become objects, and an early drone format that grouped identical drones
 // ({ count: n }) is split into n drones named "Name 1" … "Name n". The first
-// keeps the original id, and weapons mounted on the group move to it.
+// keeps the original id, and weapons mounted on the group move to it. A weapon
+// mount with no drone of that name (older data, or a non-drone vehicle) gets a
+// stats-less drone, so its weapons have a drone card to sit under.
 export function normalizeCharacterDrones(character) {
-  if (!Array.isArray(character.drones)) return character;
+  const mounts = [...new Set((character.weapons ?? []).map((w) => w.mount).filter((m) => m && m !== 'carried'))];
+  if (!Array.isArray(character.drones) && mounts.length === 0) return character;
   const renamed = new Map();
-  const drones = character.drones.map(normalizeDrone).flatMap((d) => {
+  const drones = (character.drones ?? []).map(normalizeDrone).flatMap((d) => {
     const { count, ...drone } = d;
     const n = Number.isInteger(count) ? count : 1;
     if (n <= 1) return [drone];
@@ -300,7 +324,9 @@ export function normalizeCharacterDrones(character) {
   const weapons = renamed.size && Array.isArray(character.weapons)
     ? character.weapons.map((w) => (renamed.has(w.mount) ? { ...w, mount: renamed.get(w.mount) } : w))
     : character.weapons;
-  return { ...character, drones, weapons };
+  const known = new Set(drones.map((d) => d.name));
+  const orphans = mounts.filter((m) => !known.has(renamed.get(m) ?? m)).map((name) => createDrone({ name }));
+  return { ...character, drones: [...drones, ...orphans], weapons };
 }
 
 // Appends a drone (a name or a drone object); no-op for an empty or taken name.
@@ -317,6 +343,67 @@ export function removeDrone(character, name) {
     ...character,
     drones: (character.drones ?? []).filter((d) => d.name !== name),
     weapons: character.weapons.filter((w) => w.mount !== name),
+  };
+}
+
+// Renames a drone and moves its mounted weapons (mount === old name) with it.
+// No-op for an empty, unchanged or already-taken name, or an unknown id.
+export function renameDrone(character, droneId, newName) {
+  const name = newName.trim();
+  const drones = character.drones ?? [];
+  const old = drones.find((d) => d.id === droneId);
+  if (!old || !name || name === old.name || drones.some((d) => d.name === name)) return character;
+  return {
+    ...character,
+    drones: drones.map((d) => (d.id === droneId ? { ...d, name } : d)),
+    weapons: character.weapons.map((w) => (w.mount === old.name ? { ...w, mount: name } : w)),
+  };
+}
+
+// SR6 vehicle/drone condition monitor: 8 + (Body / 2, rounded up); null when the
+// drone has no Body stat (no catalog snapshot).
+export function droneConditionMonitor(drone) {
+  const body = drone.stats && drone.stats.body;
+  return typeof body === 'number' ? 8 + Math.ceil(body / 2) : null;
+}
+
+// A drone name without a trailing "(…)" — Genesis custom names often carry the
+// drone type there ("R.E.X. (Steel Lynx Combat Drone)"), which the card header
+// already shows. Unchanged when nothing would be left.
+export function droneBaseName(name) {
+  const base = name.replace(/\s*\([^()]*\)\s*$/, '');
+  return base || name;
+}
+
+// SR6 drone initiative: Pilot × 2 + 3D6, as display text; null without a Pilot stat.
+export function droneInitiative(drone) {
+  const pilot = drone.stats && drone.stats.pilot;
+  return typeof pilot === 'number' ? `${pilot * 2} + 3D6` : null;
+}
+
+// The software running on a drone: its own first, then the rigger console's
+// (shared with every drone, marked viaRcc), split into autosofts and programs.
+export function droneSoftware(character, drone) {
+  const all = [
+    ...(drone.software ?? []).map((s) => ({ ...s, viaRcc: false })),
+    ...(character.rccSoftware ?? []).map((s) => ({ ...s, viaRcc: true })),
+  ];
+  return {
+    autosofts: all.filter((s) => s.kind === 'autosoft'),
+    programs: all.filter((s) => s.kind !== 'autosoft'),
+  };
+}
+
+// Sets a drone's damage, clamped to 0..its condition monitor; no-op for an
+// unknown drone or one without a condition monitor.
+export function setDroneDamage(character, droneId, damage) {
+  const drones = character.drones ?? [];
+  const drone = drones.find((d) => d.id === droneId);
+  const boxes = drone && droneConditionMonitor(drone);
+  if (boxes == null) return character;
+  return {
+    ...character,
+    drones: drones.map((d) => (d.id === droneId ? { ...d, damage: clamp(damage, 0, boxes) } : d)),
   };
 }
 

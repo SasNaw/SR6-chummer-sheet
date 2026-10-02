@@ -57,6 +57,7 @@ for (const book of books) {
 const parser = new DOMParser();
 const num = (v) => (v === null || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
 const drones = {};
+const software = {};
 for (const book of books) {
   const dataDir = join(root, book, 'data');
   for (const f of readdirSync(dataDir)) {
@@ -65,6 +66,12 @@ for (const book of books) {
     for (const it of Array.from(doc.getElementsByTagName('item'))) {
       const type = it.getAttribute('type') || '';
       const id = it.getAttribute('id');
+      // Autosofts and rigger programs: names only (shown on drone cards).
+      const useas = Array.from(it.childNodes || []).find((n) => n.nodeName === 'useas');
+      const useSub = useas && useas.getAttribute('subtype');
+      if (id && !software[id] && (useSub === 'AUTOSOFT' || useSub === 'RIGGER_PROGRAM')) {
+        software[id] = { en: namesEn[id] || id, de: namesDe[id] || null };
+      }
       if (!id || !type.startsWith('DRONE_') || drones[id]) continue;
       const v = Array.from(it.childNodes || []).find((n) => n.nodeName === 'vehicle');
       if (!v) continue;
@@ -89,5 +96,5 @@ for (const book of books) {
 }
 
 mkdirSync('data-local', { recursive: true });
-writeFileSync(OUT, JSON.stringify({ version: 1, drones }, null, 2));
-console.log(`Wrote ${OUT} (${Object.keys(drones).length} drones)`);
+writeFileSync(OUT, JSON.stringify({ version: 1, drones, software }, null, 2));
+console.log(`Wrote ${OUT} (${Object.keys(drones).length} drones, ${Object.keys(software).length} software)`);

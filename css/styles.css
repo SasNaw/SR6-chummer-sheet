@@ -107,11 +107,16 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 
 /* Section tabs (Weapons / Drones / Magic) — clickable top-level headers. The active tab
    carries the accent marker that elsewhere signals "this is the live header". */
-.tabs { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.tablist { display: flex; gap: 24px; align-items: center; }
+/* Three tabs plus the add button must share one phone-width row: labels and the
+   button never wrap, and on very narrow screens the tab list scrolls sideways
+   rather than pushing the button off. */
+.tabs { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.tablist { display: flex; gap: 16px; align-items: center; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tablist::-webkit-scrollbar { display: none; }
+.tabs > button { flex: none; white-space: nowrap; }
 .tab {
-  background: none; border: none; border-radius: 0; min-height: 0; padding: 2px 0;
-  font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+  background: none; border: none; border-radius: 0; min-height: 0; padding: 2px 0; flex: none; white-space: nowrap;
+  font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
 }
 .tab:hover { color: var(--text); border-color: transparent; }
 .tab.active { color: var(--text); }
@@ -227,17 +232,19 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
 .cm-box.filled { background: var(--accent); border-color: var(--accent); }
 
-/* Drone stats — spirit-card look ("Label: value", values aligned) with full
-   words. Four columns (label | value | label | value): the two label columns
-   share the width equally and the value columns are fixed, so values line up
-   within a card and across all drone cards. Long German compounds wrap at the
-   soft hyphens set in drone-card.js. Normal case, because the spirit's uppercase
-   tracking doesn't fit full words on a phone. */
-.drone-stats {
-  display: grid; align-items: baseline; gap: 8px 6px; font-size: 13px;
-  grid-template-columns: minmax(0, 1fr) 2.6em minmax(0, 1fr) 2.6em;
-}
-.drone-stats .stat-label { text-transform: none; letter-spacing: 0; font-size: 12px; overflow-wrap: break-word; }
+/* Drone card: condition monitor alone across the full width (heading, then
+   the boxes) — the spirit card's trackers without the services column. */
+.drone-trackers { display: grid; gap: 8px; }
+/* Drones tab: the drone card also holds its weapon cards and + Weapon. The
+   weapon cards are inset — darker background, extra padding — so they read as
+   part of their drone; the drone cards get more space between them. */
+.drone-weapons { display: grid; gap: 10px; }
+.drone-weapons .card { background: var(--bg); padding: 16px 18px; }
+.drone-add-weapon { justify-content: flex-end; }
+.theme-drones > .list { gap: 18px; }
+
+/* Software shared from the rigger console: marked, a step quieter. */
+.via-rcc { font-size: 11px; letter-spacing: 0.04em; opacity: 0.75; }
 
 
 /* Inline -/value/+ stepper (modal numeric fields) */

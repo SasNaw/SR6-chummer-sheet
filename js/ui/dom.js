@@ -29,8 +29,13 @@ export function openModal(title, body) {
     el('div', { class: 'modal-title' }, title),
     ...(Array.isArray(body) ? body : [body]),
   ]);
+  // Popups are colour-coded to the view they open from: they take over the
+  // section theme (theme-drones / theme-magic) of the sheet currently shown, so
+  // --accent matches; anywhere else they keep the default amber.
+  const sheet = document.querySelector('.sheet');
+  const theme = sheet ? [...sheet.classList].find((cl) => cl.startsWith('theme-')) : null;
   const backdrop = el('div', {
-    class: 'modal-backdrop',
+    class: theme ? `modal-backdrop ${theme}` : 'modal-backdrop',
     onclick: (e) => { if (e.target === backdrop) close(); },
   }, dialog);
 

@@ -1,4 +1,6 @@
-import { createCharacter, createWeapon, createReservePool, createDrone } from './model.js';
+import {
+  createCharacter, createWeapon, createReservePool, createDrone, normalizeCharacterDrones, MOUNT_ROUNDS,
+} from './model.js';
 import { getWeaponDef } from './weapons-db.js';
 import { FIRING_MODE_ROUNDS } from './firing-modes.js';
 import { prettifyRef } from './util.js';
@@ -45,7 +47,50 @@ function droneName(item, i, droneCatalog, lang) {
   return itemCount(item) > 1 ? `${base} ${i + 1}` : base;
 }
 
-function parseDrones(items, droneCatalog, lang) {
+// Kind of a software accessory (autosoft or program), or null for non-software.
+function softwareKind(item) {
+  const subtype = attr(item, 'subtype') || '';
+  if (subtype === 'AUTOSOFT') return 'autosoft';
+  if (subtype === 'RIGGER_PROGRAM' || (attr(item, 'slot') || '').startsWith('SOFTWARE')) return 'program';
+  return null;
+}
+
+// Software installed directly on the item with this uniqueid (e.g. a drone or a
+// rigger console). Accessories can appear more than once in the file, so they
+// are deduped by uniqueid. A Targeting autosoft's choice is the weapon it is
+// bound to; it becomes that weapon's display name.
+function parseSoftware(items, ownerId, catalog, droneCatalog, lang) {
+  const seen = new Set();
+  return items.filter((it) => {
+    const id = attr(it, 'uniqueid');
+    if (!ownerId || attr(it, 'embedin') !== ownerId || !softwareKind(it) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }).map((it) => {
+    const ref = attr(it, 'ref');
+    const named = droneCatalog && droneCatalog.software && droneCatalog.software[ref];
+    const rating = parseInt(attr(it, 'rating') || '', 10);
+    const choice = attr(it, 'choice');
+    return {
+      ref,
+      kind: softwareKind(it),
+      // Genesis suffixes some refs (stealth_auto, signal_scrubber_rig); drop that
+      // from the fallback name.
+      name: named ? { ...named } : { en: prettifyRef(ref.replace(/_(auto|rig)$/, '')), de: null },
+      rating: Number.isNaN(rating) ? null : rating,
+      target: choice ? resolveWeaponDef(choice, catalog, lang).name : null,
+    };
+  });
+}
+
+// Software on the character's rigger command console(s), shared with every drone.
+function parseRccSoftware(items, catalog, droneCatalog, lang) {
+  return items
+    .filter((it) => attr(it, 'subtype') === 'RIGGER_CONSOLE')
+    .flatMap((it) => parseSoftware(items, attr(it, 'uniqueid'), catalog, droneCatalog, lang));
+}
+
+function parseDrones(items, catalog, droneCatalog, lang) {
   return items
     .filter((it) => (attr(it, 'type') || '').startsWith('DRONE_') && !attr(it, 'embedin'))
     .flatMap((it) => {
@@ -58,6 +103,7 @@ function parseDrones(items, droneCatalog, lang) {
         size: attr(it, 'type'),
         subtype: attr(it, 'subtype'),
         stats: entry ? entry.stats : null,
+        software: parseSoftware(items, attr(it, 'uniqueid'), catalog, droneCatalog, lang),
       }));
     });
 }
@@ -120,6 +166,25 @@ function resolveMount(item, idx, droneCatalog, lang) {
   return 'Vehicle';
 }
 
+// Rounds a vehicle-mounted weapon holds (MOUNT_ROUNDS), from the mount or
+// turret it is installed in: the nearest MOD_MOUNT ancestor. Heavy mounts and
+// turrets (…_heavy, …_heavy_manual) hold 500; every other mount, or no mount
+// found, 250.
+function mountedRounds(item, idx) {
+  let cur = attr(item, 'embedin');
+  const visited = new Set();
+  for (let depth = 0; cur && depth < MAX_MOUNT_DEPTH && !visited.has(cur); depth += 1) {
+    visited.add(cur);
+    const owner = idx.byId.get(cur);
+    if (!owner) { cur = idx.generatedToOwner.get(cur); continue; }
+    if (attr(owner, 'subtype') === 'MOD_MOUNT') {
+      return /_heavy(_|$)/.test(attr(owner, 'ref') || '') ? MOUNT_ROUNDS.heavy : MOUNT_ROUNDS.standard;
+    }
+    cur = attr(owner, 'embedin');
+  }
+  return MOUNT_ROUNDS.standard;
+}
+
 function parseReserves(items) {
   return items
     .filter((it) => attr(it, 'type') === 'AMMUNITION')
@@ -164,27 +229,30 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en', droneCatalog =
   const weapons = Array.from(deduped.values()).map((it) => {
     const ref = attr(it, 'ref');
     const def = resolveWeaponDef(ref, catalog, lang);
+    const mount = resolveMount(it, idx, droneCatalog, lang);
+    const capacity = mount === 'carried' ? def.magazineCapacity : mountedRounds(it, idx);
     return createWeapon({
       name: def.name,
       ref,
-      mount: resolveMount(it, idx, droneCatalog, lang),
-      magazineCapacity: def.magazineCapacity,
+      mount,
+      magazineCapacity: capacity,
       ammoCategory: def.ammoCategory,
       firingModes: def.firingModes,
       attackRating: def.attackRating,
-      loaded: { ammoType: defaultAmmoType(reserves, def.ammoCategory), count: def.magazineCapacity },
+      loaded: { ammoType: defaultAmmoType(reserves, def.ammoCategory), count: capacity },
       notes: '',
     });
   });
 
-  return createCharacter({
+  return normalizeCharacterDrones(createCharacter({
     name: firstText(doc, 'name'),
     realName: firstText(doc, 'realname'),
     magic: detectMagic(doc),
     weapons,
     reserves,
-    drones: parseDrones(items, droneCatalog, lang),
-  });
+    drones: parseDrones(items, catalog, droneCatalog, lang),
+    rccSoftware: parseRccSoftware(items, catalog, droneCatalog, lang),
+  }));
 }
 
 export function importFromXmlString(xmlString, catalog = null, lang = 'en', droneCatalog = null) {
