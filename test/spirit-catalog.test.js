@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSpiritCatalog, localizedPair, spiritList } from '../js/spirit-catalog.js';
+import { isSpiritCatalog, localizedPair, spiritList, localizeSpiritText } from '../js/spirit-catalog.js';
 
 const CAT = {
   spirits: {
@@ -48,4 +48,14 @@ test('spiritList yields labelled, sorted entries', () => {
   assert.equal(list[0].spirit.conditionMonitor, 8);
   assert.deepEqual(spiritList(null, 'en'), []);
   assert.deepEqual(spiritList({}, 'en'), []);
+});
+
+test('localizeSpiritText translates action and movement terms for German', () => {
+  assert.equal(localizeSpiritText('1 Major, 3 Minor', 'de'), '1 Haupthandlung, 3 Nebenhandlungen');
+  assert.equal(localizeSpiritText('2 Major, 1 Minor', 'de'), '2 Haupthandlungen, 1 Nebenhandlung');
+  assert.equal(localizeSpiritText('5 / 10, +1/hit', 'de'), '5 / 10, +1/Erfolg');
+  assert.equal(localizeSpiritText('1 Major, 3 Minor', 'en'), '1 Major, 3 Minor'); // English untouched
+  assert.equal(localizeSpiritText('+2D6', 'de'), '+2D6');
+  assert.equal(localizeSpiritText('', 'de'), '');
+  assert.equal(localizeSpiritText(undefined, 'de'), '');
 });

@@ -23,6 +23,20 @@ export function localizedPair(entry, lang) {
   return (lang === 'de' && entry.de) ? entry.de : (entry.en || null);
 }
 
+// The catalog's derived strings (actions, movement) are written in English, e.g.
+// "1 Major, 3 Minor" and "5 / 10, +1/hit". For German, Major/Minor become
+// Haupthandlung/Nebenhandlung (plural after counts other than 1) and hit becomes
+// Erfolg. Other languages pass through unchanged.
+export function localizeSpiritText(text, lang) {
+  const s = text == null ? '' : String(text);
+  if (lang !== 'de') return s;
+  const action = (word) => (n) => `${n} ${word}${Number(n) === 1 ? '' : 'en'}`;
+  return s
+    .replace(/(\d+)\s*Major\b/g, (_, n) => action('Haupthandlung')(n))
+    .replace(/(\d+)\s*Minor\b/g, (_, n) => action('Nebenhandlung')(n))
+    .replace(/\bhits?\b/g, 'Erfolg');
+}
+
 // Spirits as a list with a localized `label`, sorted by that label.
 export function spiritList(catalog, lang) {
   if (!isSpiritCatalog(catalog)) return [];

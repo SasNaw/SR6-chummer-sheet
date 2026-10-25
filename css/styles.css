@@ -52,6 +52,7 @@ button.accent { background: var(--accent); color: var(--accent-ink); border-colo
 button.accent:hover { filter: brightness(1.06); }
 button.danger { color: var(--danger); }
 button.icon { min-width: 44px; padding: 10px; }
+button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
 
 input, select {
   font: inherit; color: var(--text); background: var(--panel-2);
@@ -110,14 +111,20 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
    section ticks, accent buttons) recolour from amber to blue automatically. */
 .sheet { display: grid; gap: 18px; }
 .theme-magic { --accent: #4d9bff; --accent-ink: #03142e; }
+.theme-drones { --accent: #5fd068; --accent-ink: #04170a; }
 
-/* Section tabs (Weapons / Magic) — clickable top-level headers. The active tab
+/* Section tabs (Weapons / Drones / Magic) — clickable top-level headers. The active tab
    carries the accent marker that elsewhere signals "this is the live header". */
-.tabs { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.tablist { display: flex; gap: 24px; align-items: center; }
+/* Three tabs plus the add button must share one phone-width row: labels and the
+   button never wrap, and on very narrow screens the tab list scrolls sideways
+   rather than pushing the button off. */
+.tabs { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.tablist { display: flex; gap: 16px; align-items: center; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tablist::-webkit-scrollbar { display: none; }
+.tabs > button { flex: none; white-space: nowrap; }
 .tab {
-  background: none; border: none; border-radius: 0; min-height: 0; padding: 2px 0;
-  font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+  background: none; border: none; border-radius: 0; min-height: 0; padding: 2px 0; flex: none; white-space: nowrap;
+  font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
 }
 .tab:hover { color: var(--text); border-color: transparent; }
 .tab.active { color: var(--text); }
@@ -131,6 +138,8 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .carried-toggle input { width: auto; min-height: 0; }
 
 .toggle.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+/* Selected because another mode implies it (SS with SA): shown on, but not toggleable. */
+.toggle.on.locked { opacity: 0.6; cursor: default; }
 .ammo-empty { color: var(--danger); border-color: var(--danger); }
 /* Currently-chambered ammo type, shown beside the round count (the switch
    control is now a button, so it no longer carries this itself). Baseline
@@ -170,6 +179,14 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .ar-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
 .ar-vals { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
 
+/* Card header, for every card with a title and action buttons (weapon, spirit,
+   and any future card): the title takes the free width and wraps; the buttons
+   (edit, then delete) stay together on the right; the title is vertically
+   centred on the buttons. */
+.card-head { flex-wrap: nowrap; align-items: center; }
+.card-head h2 { min-width: 0; overflow-wrap: anywhere; }
+.card-head > .row { flex-shrink: 0; flex-wrap: nowrap; }
+
 /* Attack-rating dialog: the five bands side by side, wrapping on narrow phones. */
 .ar-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .ar-fields .field { gap: 4px; }
@@ -184,17 +201,71 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* minmax(0, 1fr) lets the columns shrink below their content's width, so the
    card never grows wider than the screen. */
 .spirit-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; }
-.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.spirit-stats .stat-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 /* Label left, value pinned right: equal-width columns put every value at the same
    x within its column, so numbers line up vertically across rows. */
 .stat { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 13px; min-width: 0; }
 .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-val { font-weight: 700; }
 .spirit-label { color: var(--text); font-weight: 600; }
+/* Thin divider between card sections, inset from the card edges; the extra
+   vertical margin widens the gap between sections beyond the card's 12px. */
+.card-sep { border: 0; border-top: 1px solid var(--line); margin: 6px 12px; }
+/* Spirit attributes read "BOD: 3": value right after its label, the spacing
+   goes between cells instead. */
+.spirit-stats .stat { justify-content: flex-start; gap: 4px; }
+/* Same label width everywhere (sized for the widest 3-letter label), so the
+   values line up vertically within each column. */
+.spirit-stats .stat-label { min-width: 3.4em; }
+/* Header-to-attributes gap matches the attributes-to-divider gap (12px card gap
+   + the divider's 6px margin). */
+.spirit-head { margin-bottom: 6px; }
+/* Two detail rows side by side (Initiative | Astral initiative), equal columns. */
+.spirit-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+/* Optional-power count when more are selected than the Force allows (Save is blocked). */
+.over-cap { color: var(--danger); }
 
-/* Spirit services — bottom-right counter; label sits right next to it. */
-.spirit-services { align-items: center; gap: 10px; justify-content: flex-end; }
-.spirit-services .services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); }
+/* Spirit card bottom block: condition monitor (2/3) | services (1/3). Headings
+   share the first row; boxes (left, wrapping) and the counter (right) the second.
+   The counter is compacted so it fits a third of a phone-width card. */
+.spirit-trackers { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+.services-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--muted); font-size: 13px; }
+.services-label.end { text-align: right; }
+.spirit-services { flex-wrap: nowrap; gap: 4px; justify-content: flex-end; align-items: center; }
+.spirit-services button.icon { min-width: 34px; width: 34px; min-height: 34px; height: 34px; padding: 0; }
+.spirit-services .count { font-size: 24px; min-width: 1.2em; text-align: center; }
+
+/* Condition monitor: tappable boxes that wrap onto as many rows as needed. */
+.cm-boxes { display: flex; flex-wrap: wrap; gap: 6px; }
+.cm-box { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 4px; }
+.cm-box.filled { background: var(--accent); border-color: var(--accent); }
+
+/* Drone card: condition monitor alone across the full width (heading, then
+   the boxes) — the spirit card's trackers without the services column. */
+.drone-trackers { display: grid; gap: 8px; }
+/* Drone skills (and Targeting on drone weapon cards): the stat table's look in
+   two columns, since "AUSWEICHEN (PIL)" is too long for four. */
+.spirit-stats.drone-skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spirit-stats.drone-skills .stat-label { min-width: 0; }
+/* Drone AW | VW | Schaden widerstehen: columns sized to their content and
+   spread evenly across the row (equal thirds would wrap the long label). */
+.spirit-stats.drone-combat { grid-template-columns: repeat(3, max-content); justify-content: space-between; }
+/* Drones tab: the drone card also holds its weapon cards and + Weapon. The
+   weapon cards are inset — darker background, extra padding — so they read as
+   part of their drone; the drone cards get more space between them. */
+.drone-weapons { display: grid; gap: 10px; }
+.drone-weapons .card { background: var(--bg); padding: 16px 18px; }
+.drone-add-weapon { justify-content: flex-end; }
+.drone-list { gap: 18px; }
+/* RCC card: a heading over a wrapping row of chips per section (running /
+   installed programs, slaved drones). Chips are the toggle buttons, compacted. */
+.rcc-section { display: grid; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+
+/* Software shared from the rigger console: marked, a step quieter. */
+.via-rcc { font-size: 11px; letter-spacing: 0.04em; opacity: 0.75; }
+
 
 /* Inline -/value/+ stepper (modal numeric fields) */
 .stepper { display: inline-flex; align-items: center; gap: 10px; }
