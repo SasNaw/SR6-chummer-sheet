@@ -57,6 +57,55 @@ export function parseAttackRating(str) {
   return out;
 }
 
+// An attack-rating change from a mod's <itemattrmod attr="ATTACK_RATING">: a
+// flat `val="2"` applies to every band; `objVal="-2,,+1,+2,+1"` is per band,
+// signed, blank = 0. null when neither is set.
+export function parseAttackRatingMod({ val, objVal } = {}) {
+  if (typeof objVal === 'string') {
+    const parts = objVal.split(',');
+    return Array.from({ length: ATTACK_RATING_BANDS }, (_, i) => parseInt((parts[i] || '').trim(), 10) || 0);
+  }
+  const n = parseInt(val, 10);
+  return Number.isInteger(n) ? new Array(ATTACK_RATING_BANDS).fill(n) : null;
+}
+
+// A weapon's attack rating with its installed mods applied, as Genesis computes
+// it. `modKeys` are the mods on the weapon, keyed like sr6char condition ids
+// (`item.<accessory>` / `itemmod.<enhancement>`); `activeConditions` are the
+// weapon's <conditions> ids (`<key>.cond.<n>`); `mods` is the catalog's
+// key -> [{ ar, cond }] table. An effect with a `cond` applies only when that
+// condition is active. Each mod counts once; a band the weapon has no rating in
+// stays empty, and a rated band never drops below 1.
+//
+// Laser sights and smartguns are aiming aids that don't stack: per band they
+// add at most the largest bonus any one installed aid can give (laser +1 and a
+// smartgun's +2 make +2, not +3).
+const AIMING_AID = /laser_sight|smartgun/;
+
+export function moddedAttackRating(base, modKeys, activeConditions, mods) {
+  if (!mods) return [...base];
+  const active = new Set(activeConditions);
+  const other = new Array(ATTACK_RATING_BANDS).fill(0);
+  const aiming = new Array(ATTACK_RATING_BANDS).fill(0);
+  const aimingCap = new Array(ATTACK_RATING_BANDS).fill(0);
+  for (const key of new Set(modKeys)) {
+    const isAim = AIMING_AID.test(key);
+    for (const { ar, cond } of mods[key] || []) {
+      for (let i = 0; i < ATTACK_RATING_BANDS; i += 1) {
+        if (isAim) aimingCap[i] = Math.max(aimingCap[i], ar[i] || 0);
+      }
+      if (cond != null && !active.has(`${key}.cond.${cond}`)) continue;
+      for (let i = 0; i < ATTACK_RATING_BANDS; i += 1) {
+        if (isAim) aiming[i] += ar[i] || 0;
+        else other[i] += ar[i] || 0;
+      }
+    }
+  }
+  return base.map((n, i) => (n > 0
+    ? Math.max(1, n + other[i] + Math.min(aiming[i], aimingCap[i]))
+    : n));
+}
+
 // Weapons as a list with a localized `label`, sorted by that label.
 export function catalogWeaponList(catalog, lang) {
   if (!catalog || !catalog.weapons) return [];

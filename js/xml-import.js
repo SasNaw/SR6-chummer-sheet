@@ -6,19 +6,39 @@ import { getWeaponDef } from './weapons-db.js';
 import { FIRING_MODE_ROUNDS } from './firing-modes.js';
 import { prettifyRef } from './util.js';
 import { droneEntry } from './drone-catalog.js';
+import { moddedAttackRating } from './catalog.js';
 
 // Resolve a weapon ref to a definition, preferring the loaded catalog (its 200+
 // weapons) over the small built-in table. Returns { name, magazineCapacity,
-// ammoCategory, firingModes:[{mode,rounds}] }.
-function resolveWeaponDef(ref, catalog, lang) {
+// ammoCategory, firingModes:[{mode,rounds}] }. `installed` is what the sr6char
+// item says is on this weapon ({ modKeys, conditions }, see weaponMods); the
+// catalog's attack rating is adjusted for it plus the weapon's built-in mods.
+function resolveWeaponDef(ref, catalog, lang, installed = null) {
   const w = catalog && catalog.weapons && catalog.weapons[ref];
   if (!w) return getWeaponDef(ref);
+  const attackRating = w.attackRating || [];
   return {
     name: (lang === 'de' && w.nameDe) ? w.nameDe : (w.name || prettifyRef(ref)),
     magazineCapacity: w.magazineCapacity ?? 0,
     ammoCategory: w.ammoCategory ?? null,
     firingModes: (w.firingModes || []).map((m) => ({ mode: m, rounds: FIRING_MODE_ROUNDS[m] ?? 1 })),
-    attackRating: w.attackRating || [],
+    attackRating: installed && attackRating.length
+      ? moddedAttackRating(attackRating, [...(w.builtInMods || []), ...installed.modKeys], installed.conditions, catalog.mods)
+      : attackRating,
+  };
+}
+
+// The mods sr6char records on a weapon item: its accessories (item.<ref>) and
+// enhancements (itemmod.<ref>), keyed like its <conditions> ids, plus those
+// active condition ids. Genesis saves only these, never the resulting stats.
+function weaponMods(item) {
+  const children = (tag, inner) => directChildren(item, tag).flatMap((n) => directChildren(n, inner));
+  return {
+    modKeys: [
+      ...children('accessories', 'item').map((n) => `item.${attr(n, 'ref')}`),
+      ...children('enhancements', 'enhancement').map((n) => `itemmod.${attr(n, 'ref')}`),
+    ],
+    conditions: children('conditions', 'id').map((n) => (n.textContent || '').trim()),
   };
 }
 
@@ -238,7 +258,7 @@ export function parseSr6CharDoc(doc, catalog = null, lang = 'en', droneCatalog =
 
   const weapons = Array.from(deduped.values()).map((it) => {
     const ref = attr(it, 'ref');
-    const def = resolveWeaponDef(ref, catalog, lang);
+    const def = resolveWeaponDef(ref, catalog, lang, weaponMods(it));
     const mount = resolveMount(it, idx, droneCatalog, lang);
     const capacity = mount === 'carried' ? def.magazineCapacity : mountedRounds(it, idx);
     return createWeapon({

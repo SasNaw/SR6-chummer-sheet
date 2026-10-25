@@ -127,6 +127,34 @@ test('S4T0: a catalog supplies attack ratings on import', () => {
   assert.deepEqual(c.weapons.find((w) => w.ref === 'ares_predator_vi').attackRating, [0, 0, 0, 0, 0]);
 });
 
+test('S4T0: installed mods with active conditions adjust the imported attack rating', () => {
+  // Made-up effects. In the fixture the carried FN HAR has an external smartgun
+  // with its cond.2 active; the drone's Roomsweeper has a laser sight; the
+  // Predator has nothing installed but a built-in internal smartgun.
+  const catalog = {
+    weapons: {
+      fn_har: { name: 'FN HAR', magazineCapacity: 35, ammoCategory: 'ammo_rifles', firingModes: ['SA'], attackRating: [3, 11, 10, 6, 1] },
+      remington_roomsweeper: { name: 'Roomsweeper', magazineCapacity: 8, ammoCategory: 'ammo_shotgun', firingModes: ['SA'], attackRating: [9, 8, 4, 0, 0] },
+      ares_predator_vi: {
+        name: 'Predator', magazineCapacity: 15, ammoCategory: 'ammo_heavy', firingModes: ['SA'], attackRating: [10, 10, 8, 0, 0],
+        builtInMods: ['itemmod.smartgun_system_internal'],
+      },
+    },
+    mods: {
+      'item.smartgun_system_external': [{ ar: [2, 2, 2, 2, 2], cond: 1 }, { ar: [1, 1, 1, 1, 1], cond: 2 }],
+      'itemmod.smartgun_system_internal': [{ ar: [2, 2, 2, 2, 2], cond: 1 }],
+      'item.laser_sight': [{ ar: [1, 1, 1, 1, 1], cond: null }],
+    },
+  };
+  const c = parseSr6CharDoc(load('S4T0.xml'), catalog, 'en');
+  const har = (mount) => c.weapons.find((w) => w.ref === 'fn_har' && w.mount === mount);
+  assert.deepEqual(har('carried').attackRating, [4, 12, 11, 7, 2]); // smartgun cond.2 only
+  assert.deepEqual(har('Gremlin (MCT-Nissan Roto-Drohne)').attackRating, [3, 11, 10, 6, 1]); // no mods
+  assert.deepEqual(c.weapons.find((w) => w.ref === 'remington_roomsweeper').attackRating, [10, 9, 5, 0, 0]);
+  // Built-in smartgun, but its condition is not active in this file.
+  assert.deepEqual(c.weapons.find((w) => w.ref === 'ares_predator_vi').attackRating, [10, 10, 8, 0, 0]);
+});
+
 // Made-up stats (not rulebook values) keyed by the S4T0 drone refs.
 const DRONE_CAT = { drones: {
   steel_lynx_combat_drone: { id: 'steel_lynx_combat_drone', name: { en: 'Lynx', de: 'Luchs' }, size: 'DRONE_LARGE', subtype: 'GROUND',

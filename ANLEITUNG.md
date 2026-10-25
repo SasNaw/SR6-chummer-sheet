@@ -100,6 +100,13 @@ Geisterkatalog geladen ist.
 > Import der Charakter-XML. Wurde der Charakter ohne Katalog importiert (oder vor
 > diesem App-Update), fehlen Werte, Autosofts und RCC — dann die XML erneut
 > importieren.
+>
+> **Waffenmodifikationen:** Genesis speichert in der XML nur, *welche* Zubehörteile
+> und Modifikationen (z. B. Smartgun, Schulterpolster, Vordergriff) an einer
+> Waffe hängen und welche ihrer Bedingungen angehakt sind — nicht den fertigen
+> Angriffswert. Die App rechnet die Boni beim Import mit dem Waffenkatalog nach.
+> Dafür braucht es einen Waffenkatalog **ab Oktober 2026** (mit Modifikationen);
+> mit einem älteren Katalog werden nur die Grundwerte übernommen.
 
 ---
 

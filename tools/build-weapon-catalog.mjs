@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync, mkdi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DOMParser } from '@xmldom/xmldom';
-import { parseAttackRating } from '../js/catalog.js';
+import { parseAttackRating, parseAttackRatingMod } from '../js/catalog.js';
 
 const HOME = process.env.HOME;
 const JAR = process.env.GENESIS_JAR
@@ -133,8 +133,48 @@ eachDataFile((f, path, book) => {
       reload: (ammoStr.match(/\(([^)]+)\)/) || [, null])[1], // c/m/b/d (clip/magazine/break/drum)
       firingModes: modes,
       attackRating: parseAttackRating(attr(weapon, 'attack')),
+      ...(builtInMods(item).length ? { builtInMods: builtInMods(item) } : {}),
       source: book,
     };
+  }
+});
+
+// Mods a weapon ships with, keyed like the mods table below: built-in
+// enhancements (<moditemmod ref>, e.g. the Predator VI's internal smartgun) and
+// included accessories (<accessorymod included="true">, e.g. a laser sight).
+function builtInMods(item) {
+  const mods = directChild(item, 'modifications');
+  if (!mods) return [];
+  return Array.from(mods.childNodes || []).flatMap((n) => {
+    if (n.nodeName === 'moditemmod' && attr(n, 'ref')) return [`itemmod.${attr(n, 'ref')}`];
+    if (n.nodeName === 'accessorymod' && attr(n, 'included') === 'true' && attr(n, 'item')) return [`item.${attr(n, 'item')}`];
+    return [];
+  });
+}
+
+// 6. Weapon mods: the attack-rating effects of accessories (gear items, keyed
+//    item.<id>) and enhancements (<itemenhancement>, keyed itemmod.<id>), the
+//    same keys sr6char uses for a weapon's <conditions>. An effect with
+//    cond="true" applies only while its condition (condindex) is ticked. Only
+//    mods that change the attack rating are kept.
+const mods = {};
+eachDataFile((f, path) => {
+  if (!f.startsWith('gear_') && f !== 'weapon_modifications.xml') return;
+  const doc = parser.parseFromString(readFileSync(path, 'utf8'), 'text/xml');
+  const defs = [...els(doc, 'item').map((n) => ['item', n]), ...els(doc, 'itemenhancement').map((n) => ['itemmod', n])];
+  for (const [prefix, def] of defs) {
+    const id = attr(def, 'id');
+    const key = `${prefix}.${id}`;
+    const modifications = directChild(def, 'modifications');
+    if (!id || !modifications || mods[key]) continue; // first sourcebook wins
+    const effects = Array.from(modifications.childNodes || [])
+      .filter((n) => n.nodeName === 'itemattrmod' && attr(n, 'attr') === 'ATTACK_RATING')
+      .map((n) => ({
+        ar: parseAttackRatingMod({ val: attr(n, 'val'), objVal: attr(n, 'objVal') }),
+        cond: attr(n, 'cond') === 'true' ? (parseInt(attr(n, 'condindex'), 10) || 1) : null,
+      }))
+      .filter((e) => e.ar);
+    if (effects.length) mods[key] = effects;
   }
 });
 
@@ -167,8 +207,9 @@ mkdirSync('data-local', { recursive: true });
 const out = {
   source: 'Genesis (de.rpgframework) — licensed SR6 data, local use only',
   jar: JAR.split('/').pop(),
-  counts: { weapons: Object.keys(weapons).length, ammoCategories: Object.keys(ammoCategories).length, ammoTypes: Object.keys(ammoTypes).length },
+  counts: { weapons: Object.keys(weapons).length, mods: Object.keys(mods).length, ammoCategories: Object.keys(ammoCategories).length, ammoTypes: Object.keys(ammoTypes).length },
   weapons,
+  mods,
   ammoCategories,
   ammoTypes,
 };
@@ -178,4 +219,7 @@ console.log(`Wrote ${OUT}`);
 console.log(out.counts);
 for (const id of ['ares_predator_vi', 'fn_har', 'remington_roomsweeper']) {
   console.log(id, '→', JSON.stringify(weapons[id]));
+}
+for (const key of ['item.laser_sight', 'item.shock_pad', 'itemmod.smartgun_system_internal']) {
+  console.log(key, '→', JSON.stringify(mods[key]));
 }
