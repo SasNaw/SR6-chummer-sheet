@@ -1,6 +1,6 @@
 import { el } from './dom.js';
 import { getState, t, rerender } from '../app.js';
-import { setReserveCount, removeReserve } from '../model.js';
+import { setReserveCount, removeReserve, dronesArmedFirst } from '../model.js';
 import { updateCharacter, catName, typeNameL } from './sheet-common.js';
 import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
@@ -114,7 +114,7 @@ export function renderSheet(container, characterId) {
 }
 
 // Drones tab, in three headed sections like Reserve ammo: RCCs (the rigger
-// command console, if the character has one); Drones, one card per drone that
+// command console, if the character has one); Drones (armed ones first), one card per drone that
 // also holds the weapons mounted on it (inset weapon cards) and a + Weapon for
 // that drone, so each drone reads as one group; then the reserve ammo (the same
 // pools as on the Weapons tab).
@@ -124,7 +124,7 @@ function dronesTab(container, c) {
     container.append(el('div', { class: 'group' }, [sectionTitle(t('rccs')), rccCard(c)]));
   }
 
-  const drones = c.drones ?? [];
+  const drones = dronesArmedFirst(c);
   const list = el('div', { class: 'list drone-list' });
   if (drones.length === 0) list.append(el('div', { class: 'muted' }, t('noDrones')));
   for (const d of drones) {

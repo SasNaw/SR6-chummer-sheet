@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createCharacter, createDrone, createWeapon, addDrone,
   droneConditionMonitor, setDroneDamage, renameDrone, droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting, droneCombatValues,
-  MOUNT_ROUNDS, mountSize,
+  MOUNT_ROUNDS, mountSize, dronesArmedFirst,
 } from '../js/model.js';
 
 function withDrone(props = {}) {
@@ -160,4 +160,13 @@ test('mountSize reads the mount back from a weapon\'s capacity', () => {
   assert.equal(mountSize({ magazineCapacity: 500 }), 'heavy');
   assert.equal(mountSize({ magazineCapacity: 250 }), 'standard');
   assert.equal(mountSize({ magazineCapacity: 30 }), 'standard'); // older manual weapons
+});
+
+test('dronesArmedFirst: armed drones first, each group keeping its stored order', () => {
+  let c = createCharacter({ name: 'T' });
+  for (const name of ['A', 'B', 'C', 'D']) c = addDrone(c, createDrone({ name }));
+  c = { ...c, weapons: [createWeapon({ name: 'gun1', mount: 'D' }), createWeapon({ name: 'gun2', mount: 'B' })] };
+  assert.deepEqual(dronesArmedFirst(c).map((d) => d.name), ['B', 'D', 'A', 'C']);
+  assert.deepEqual(c.drones.map((d) => d.name), ['A', 'B', 'C', 'D']);
+  assert.deepEqual(dronesArmedFirst(createCharacter({ name: 'T' })), []);
 });

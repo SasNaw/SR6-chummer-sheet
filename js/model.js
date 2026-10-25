@@ -424,6 +424,15 @@ export function addDrone(character, droneOrName) {
   return { ...character, drones: [...drones, { ...drone }], ...(rcc ? { rcc } : {}) };
 }
 
+// The character's drones for display: those with a weapon mounted on them
+// first, then the unarmed ones, each group in stored order. Display-only; the
+// stored order is untouched.
+export function dronesArmedFirst(character) {
+  const drones = character.drones ?? [];
+  const armed = new Set((character.weapons ?? []).map((w) => w.mount));
+  return [...drones.filter((d) => armed.has(d.name)), ...drones.filter((d) => !armed.has(d.name))];
+}
+
 // Removes the drone and every weapon mounted on it (mount === name), and
 // releases it from the RCC.
 export function removeDrone(character, name) {
