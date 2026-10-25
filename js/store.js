@@ -1,4 +1,4 @@
-import { upsertCharacter } from './model.js';
+import { upsertCharacter, normalizeCharacterDrones } from './model.js';
 
 export const STORAGE_KEY = 'sr6-ammo-tracker';
 
@@ -18,7 +18,7 @@ export function deserialize(text) {
     if (obj.characters.some((c) => typeof c !== 'object' || c === null)) return emptyState();
     return {
       version: 1,
-      characters: obj.characters,
+      characters: obj.characters.map(normalizeCharacterDrones),
       activeId: obj.activeId ?? null,
       lang: obj.lang === 'de' ? 'de' : 'en',
     };

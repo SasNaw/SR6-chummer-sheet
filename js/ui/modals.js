@@ -1,10 +1,10 @@
 import { el, clear, openModal } from './dom.js';
 import { t } from '../app.js';
 import {
-  addReserve, createReservePool, addDrone, createWeapon, addWeapon,
+  addReserve, createReservePool, addDrone, renameDrone, createWeapon, addWeapon,
   addSpirit, spiritFromCatalog, editSpirit, optionalPowerCap, editWeapon, expandFiringModes,
   sanitizeArInput, parseArInput, formatArInput,
-  matchingReserves, reload,
+  matchingReserves, reload, MOUNT_ROUNDS, mountSize,
 } from '../model.js';
 import { getCatalog, catalogWeaponList } from '../catalog.js';
 import { getSpiritCatalog, spiritList, localizedPair } from '../spirit-catalog.js';
@@ -137,9 +137,13 @@ export function openAmmoSwitchModal(c, w) {
 }
 
 // Modal to add a drone: just a name. Appended to the bottom of the Drones section.
-export function openAddDroneModal(c) {
-  const nameInput = el('input', { type: 'text', placeholder: t('droneNamePlaceholder') });
-  const close = openModal(t('addDroneTitle'), [
+// The one drone dialog, for both adding and editing: the name. Without `drone`
+// it adds a new drone; with `drone` it is pre-filled and Save renames it
+// (renameDrone also moves its mounted weapons).
+export function openDroneModal(c, drone = null) {
+  const editing = Boolean(drone);
+  const nameInput = el('input', { type: 'text', placeholder: t('droneNamePlaceholder'), value: editing ? drone.name : '' });
+  const close = openModal(t(editing ? 'editDroneTitle' : 'addDroneTitle'), [
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('div', { class: 'row spread' }, [
       el('button', { onclick: () => close() }, t('cancel')),
@@ -149,9 +153,9 @@ export function openAddDroneModal(c) {
           const name = nameInput.value.trim();
           if (!name) return;
           close();
-          updateCharacter(c.id, (ch) => addDrone(ch, name));
+          updateCharacter(c.id, (ch) => (editing ? renameDrone(ch, drone.id, name) : addDrone(ch, name)));
         },
-      }, t('add')),
+      }, t(editing ? 'save' : 'add')),
     ]),
   ]);
 }
@@ -174,6 +178,25 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
     type: 'text', inputmode: 'numeric', placeholder: 'e.g. 20', value: editing ? String(weapon.magazineCapacity ?? '') : '',
   });
   capInput.addEventListener('input', () => { capInput.value = capInput.value.replace(/[^0-9]/g, ''); });
+
+  // Drone/vehicle weapons: no magazine size — the capacity comes from the mount,
+  // picked with a Standard (250) / Heavy (500) toggle instead of the field above.
+  const mounted = (editing ? weapon.mount : mount) !== 'carried';
+  let mountChoice = editing ? mountSize(weapon) : 'standard';
+  const mountButtons = Object.keys(MOUNT_ROUNDS).map((size) => {
+    const btn = el('button', { type: 'button', class: 'toggle', 'data-size': size },
+      t(size === 'heavy' ? 'heavyMount' : 'standardMount', MOUNT_ROUNDS[size]));
+    btn.addEventListener('click', () => { mountChoice = size; syncMount(); });
+    return btn;
+  });
+  function syncMount() {
+    for (const btn of mountButtons) {
+      const on = btn.getAttribute('data-size') === mountChoice;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  syncMount();
 
   // Attack rating: one field per range band. "-" means no rating at that range;
   // 0 is converted to "-" as it is typed (see sanitizeArInput).
@@ -336,7 +359,9 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('name')), nameInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('customName')), aliasInput]),
     el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('weaponType')), typeSel]),
-    el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('maxAmmoCapacity')), capInput]),
+    mounted
+      ? el('div', { class: 'field' }, [el('span', { class: 'muted' }, t('weaponMount')), el('div', { class: 'modes' }, mountButtons)])
+      : el('label', { class: 'field' }, [el('span', { class: 'muted' }, t('maxAmmoCapacity')), capInput]),
     el('div', { class: 'field' }, [
       el('span', { class: 'muted' }, t('attackRatingTitle')),
       el('div', { class: 'ar-fields' }, AR_BANDS.map((key, i) =>
@@ -352,7 +377,7 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
             name: nameInput.value.trim() || (editing ? weapon.name : 'New Weapon'),
             alias: aliasInput.value.trim(),
             ammoCategory: typeSel.value,
-            magazineCapacity: Math.max(0, parseInt(capInput.value, 10) || 0),
+            magazineCapacity: mounted ? MOUNT_ROUNDS[mountChoice] : Math.max(0, parseInt(capInput.value, 10) || 0),
             attackRating: arInputs.map((input) => parseArInput(input.value)),
             firingModes: STANDARD_FIRING_MODES.filter((m) => effectiveModes().has(m.mode)).map((m) => ({ ...m })),
           };
@@ -360,7 +385,11 @@ export function openWeaponModal(c, { mount = 'carried', weapon = null } = {}) {
           if (editing) {
             updateCharacter(c.id, (ch) => editWeapon(ch, weapon.id, values));
           } else {
-            const created = createWeapon({ ...values, ref: (picked && picked.id) || '', mount });
+            // A new mounted weapon starts with its mount full (as on import), with
+            // the ammo type of the character's matching reserve pool.
+            const pool = c.reserves.find((r) => r.ammoCategory === values.ammoCategory);
+            const loaded = mounted ? { ammoType: pool ? pool.ammoType : 'regular', count: values.magazineCapacity } : undefined;
+            const created = createWeapon({ ...values, ref: (picked && picked.id) || '', mount, loaded });
             updateCharacter(c.id, (ch) => addWeapon(ch, created));
           }
         },
