@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createCharacter, createDrone, createWeapon, addDrone,
-  droneConditionMonitor, setDroneDamage, renameDrone, droneInitiative, droneSoftware, droneBaseName,
+  droneConditionMonitor, setDroneDamage, renameDrone, droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting,
   MOUNT_ROUNDS, mountSize,
 } from '../js/model.js';
 
@@ -79,6 +79,50 @@ test('droneSoftware: own software first, then running RCC software marked, split
   assert.deepEqual(programs.map((s) => [s.ref, s.viaRcc]), [['scrubber', true]]);
   // Older stored data without software lists or an RCC.
   assert.deepEqual(droneSoftware({}, {}), { autosofts: [], programs: [] });
+});
+
+test('droneSkills: attribute + autosoft rating, in Evasion/Perception/Piloting/Stealth order', () => {
+  const sw = (ref, rating) => ({ id: ref, ref, kind: 'autosoft', name: { en: ref, de: null }, rating, target: null });
+  const drone = {
+    id: 'd', stats: { pilot: 3, sensor: 2 },
+    software: [sw('evasion', 4), sw('clearsight', 5), sw('maneuvering', 2), sw('stealth_auto', 6)],
+  };
+  assert.deepEqual(droneSkills({}, drone), [
+    { key: 'evasion', value: 7 },
+    { key: 'perception', value: 7 },
+    { key: 'piloting', value: 5 },
+    { key: 'stealth', value: 9 },
+  ]);
+});
+
+test('droneSkills: a missing autosoft counts as 0; the highest rating wins, RCC included', () => {
+  const sw = (ref, rating) => ({ id: ref, ref, kind: 'autosoft', name: { en: ref, de: null }, rating, target: null });
+  const drone = { id: 'd', stats: { pilot: 3, sensor: 2 }, software: [sw('evasion', 2)] };
+  const c = { rcc: { software: [sw('evasion', 5), sw('stealth', 4)], running: ['evasion', 'stealth'], slaved: ['d'] } };
+  assert.deepEqual(droneSkills(c, drone).map((s) => s.value), [8, 2, 3, 7]);
+  // RCC software only counts while the drone is slaved to the console.
+  assert.deepEqual(droneSkills({ rcc: { ...c.rcc, slaved: [] } }, drone).map((s) => s.value), [5, 2, 3, 3]);
+});
+
+test('droneTargeting: Sensor + the highest Targeting rating bound to that weapon (by name); null when unrated', () => {
+  const sw = (ref, rating, target = null) => ({ id: `${ref}-${target}`, ref, kind: 'autosoft', name: { en: ref, de: null }, rating, target });
+  const drone = {
+    id: 'd', stats: { pilot: 3, sensor: 2 },
+    software: [sw('targeting', 4, 'Roomsweeper'), sw('targeting', 0, 'Ares Alpha')],
+  };
+  const c = { rcc: { software: [sw('targeting', 6, 'Roomsweeper'), sw('targeting', 3, 'Ingram')], running: ['targeting-Roomsweeper', 'targeting-Ingram'], slaved: ['d'] } };
+  assert.equal(droneTargeting(c, drone, { name: 'Roomsweeper', alias: 'Boom' }), 8);
+  assert.equal(droneTargeting(c, drone, { name: 'Ingram' }), 5);
+  assert.equal(droneTargeting(c, drone, { name: 'Ares Alpha' }), null);
+  assert.equal(droneTargeting(c, drone, { name: 'FN HAR' }), null);
+  assert.equal(droneTargeting(c, { ...drone, stats: null }, { name: 'Roomsweeper' }), null);
+  // Targeting is not one of the drone-level skills.
+  assert.equal(droneSkills(c, drone).length, 4);
+});
+
+test('droneSkills: null without stats; a missing attribute leaves that skill null', () => {
+  assert.equal(droneSkills({}, { id: 'd', stats: null }), null);
+  assert.deepEqual(droneSkills({}, { id: 'd', stats: { pilot: 2 } }).map((s) => s.value), [2, null, 2, 2]);
 });
 
 test('droneBaseName drops a trailing "(…)" from the name', () => {

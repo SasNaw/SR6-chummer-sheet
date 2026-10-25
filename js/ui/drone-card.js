@@ -2,7 +2,7 @@ import { el } from './dom.js';
 import { localizedPair } from '../spirit-catalog.js';
 import {
   removeDrone, droneConditionMonitor, setDroneDamage, damageAfterBoxClick,
-  droneInitiative, droneSoftware, droneBaseName,
+  droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting, DRONE_SKILLS,
 } from '../model.js';
 import { openDroneModal } from './modals.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
@@ -22,6 +22,20 @@ const STAT_LABELS = {
     ['speedInterval', 'Int', 'Geschwindigkeitsintervall'], ['topSpeed', 'Max', 'Höchstgeschwindigkeit'],
     ['body', 'Rum', 'Rumpf'], ['armor', 'Pan', 'Panzerung'], ['pilot', 'Pil', 'Pilot'], ['sensor', 'Sen', 'Sensor'],
   ],
+};
+
+// Skill names by droneSkills key, with the formula behind each value as tooltip.
+const SKILL_LABELS = {
+  en: {
+    evasion: ['Evasion', 'Pilot + Evasion'], perception: ['Perception', 'Sensor + Clearsight'],
+    piloting: ['Piloting', 'Pilot + Maneuvering'], stealth: ['Stealth', 'Pilot + Stealth'],
+    targeting: ['Targeting', 'Sensor + Targeting'],
+  },
+  de: {
+    evasion: ['Ausweichen', 'Pilot + Ausweichen'], perception: ['Wahrnehmung', 'Sensor + Clearsight'],
+    piloting: ['Steuern', 'Pilot + Manövrieren'], stealth: ['Heimlichkeit', 'Pilot + Stealth'],
+    targeting: ['Zielerfassung', 'Sensor + Zielerfassung'],
+  },
 };
 
 const SIZE_LABELS = {
@@ -79,6 +93,26 @@ function droneStats(drone, lang) {
   ])));
 }
 
+// One skill cell in the stat-table style: "AUSWEICHEN (PIL): 10" (value not
+// bold), with the formula as tooltip.
+function skillStat(key, attribute, value, lang) {
+  const [name, formula] = (SKILL_LABELS[lang] || SKILL_LABELS.en)[key];
+  const short = (STAT_LABELS[lang] || STAT_LABELS.en).find(([k]) => k === attribute)[1];
+  return el('div', { class: 'stat', title: formula }, [
+    el('span', { class: 'stat-label' }, `${name} (${short}): `),
+    el('span', {}, String(value ?? '–')),
+  ]);
+}
+
+// The drone's Targeting skill with a weapon mounted on it, for that weapon's
+// card on the Drones tab; null when the drone has no rated Targeting autosoft
+// bound to it.
+export function droneTargetingStat(c, drone, weapon) {
+  const value = droneTargeting(c, drone, weapon);
+  return value == null ? null
+    : el('div', { class: 'spirit-stats drone-skills' }, [skillStat('targeting', 'sensor', value, uiLang())]);
+}
+
 // Drone card for the Drones tab, laid out like the spirit card: header with
 // edit/delete, stat table, details (initiative, software), and the
 // condition monitor (no services). Without a stats snapshot, a hint replaces the stats and monitor.
@@ -124,6 +158,16 @@ export function droneCard(c, drone) {
   if (details.length) {
     card.append(el('hr', { class: 'card-sep' }));
     card.append(...details);
+  }
+
+  // Skills (attribute + autosoft), styled like the stat table above but in two
+  // columns: "AUSWEICHEN (PIL): 10". Targeting is shown on each weapon's card
+  // instead (droneTargetingStat).
+  const skills = droneSkills(c, drone);
+  if (skills) {
+    card.append(el('hr', { class: 'card-sep' }));
+    card.append(el('div', { class: 'spirit-stats drone-skills' },
+      skills.map(({ key, value }) => skillStat(key, DRONE_SKILLS.find((s) => s.key === key).attribute, value, lang))));
   }
 
   // Condition monitor: full width (no services column). Same box behaviour as

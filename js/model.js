@@ -483,6 +483,43 @@ export function droneSoftware(character, drone) {
   };
 }
 
+// Drone skills in display order: the drone attribute and the autosoft (by ref,
+// Genesis' "_auto" suffix ignored) whose rating is added to it.
+export const DRONE_SKILLS = [
+  { key: 'evasion', attribute: 'pilot', autosoft: 'evasion' },
+  { key: 'perception', attribute: 'sensor', autosoft: 'clearsight' },
+  { key: 'piloting', attribute: 'pilot', autosoft: 'maneuvering' },
+  { key: 'stealth', attribute: 'pilot', autosoft: 'stealth' },
+];
+
+// A drone's skill values: attribute + rating of the matching autosoft running on
+// it (own or shared by the RCC, highest rating wins; 0 without one). null
+// without stats; a skill whose attribute is missing has value null.
+export function droneSkills(character, drone) {
+  if (!drone.stats) return null;
+  const { autosofts } = droneSoftware(character, drone);
+  return DRONE_SKILLS.map(({ key, attribute, autosoft }) => {
+    const base = drone.stats[attribute];
+    const rating = Math.max(0, ...autosofts
+      .filter((s) => (s.ref || '').replace(/_auto$/, '') === autosoft)
+      .map((s) => s.rating ?? 0));
+    return { key, value: typeof base === 'number' ? base + rating : null };
+  });
+}
+
+// A drone's Targeting skill with one of its weapons: Sensor + the highest rating
+// of the Targeting autosofts running on it that are bound to that weapon (by
+// catalog name, so an alias doesn't matter). null without stats/Sensor or
+// without a rated Targeting autosoft for it.
+export function droneTargeting(character, drone, weapon) {
+  const sensor = drone.stats && drone.stats.sensor;
+  if (typeof sensor !== 'number') return null;
+  const rating = Math.max(0, ...droneSoftware(character, drone).autosofts
+    .filter((s) => s.ref === 'targeting' && s.target === weapon.name)
+    .map((s) => s.rating ?? 0));
+  return rating > 0 ? sensor + rating : null;
+}
+
 // Sets a drone's damage, clamped to 0..its condition monitor; no-op for an
 // unknown drone or one without a condition monitor.
 export function setDroneDamage(character, droneId, damage) {

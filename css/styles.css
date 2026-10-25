@@ -235,6 +235,10 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
 /* Drone card: condition monitor alone across the full width (heading, then
    the boxes) — the spirit card's trackers without the services column. */
 .drone-trackers { display: grid; gap: 8px; }
+/* Drone skills (and Targeting on drone weapon cards): the stat table's look in
+   two columns, since "AUSWEICHEN (PIL)" is too long for four. */
+.spirit-stats.drone-skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spirit-stats.drone-skills .stat-label { min-width: 0; }
 /* Drones tab: the drone card also holds its weapon cards and + Weapon. The
    weapon cards are inset — darker background, extra padding — so they read as
    part of their drone; the drone cards get more space between them. */

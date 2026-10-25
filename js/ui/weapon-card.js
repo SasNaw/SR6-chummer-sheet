@@ -16,7 +16,9 @@ function formatAttackRating(values) {
     (_, i) => (ar[i] > 0 ? String(ar[i]) : '\u2014')).join(' / ');
 }
 
-export function weaponCard(c, w, { stashable = false } = {}) {
+// `extra`: an optional element shown under the attack rating (the Drones tab
+// passes the drone's Targeting skill); the Weapons tab passes none.
+export function weaponCard(c, w, { stashable = false, extra = null } = {}) {
   const card = el('div', { class: 'card' });
 
   // Header: name on the left; edit (the full weapon dialog) then delete on the right.
@@ -36,6 +38,7 @@ export function weaponCard(c, w, { stashable = false } = {}) {
     el('span', { class: 'ar-label' }, t('attackRating')),
     el('span', { class: 'ar-vals' }, formatAttackRating(w.attackRating)),
   ]));
+  if (extra) card.append(extra);
 
   // Count + ammo-pool switcher
   card.append(el('div', { class: 'row spread' }, [

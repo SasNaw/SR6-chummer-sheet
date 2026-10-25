@@ -6,12 +6,13 @@ import { weaponCard } from './weapon-card.js';
 import { spiritCard } from './spirit-card.js';
 import { getSpiritCatalog } from '../spirit-catalog.js';
 import { openWeaponModal, openDroneModal, openAddPoolModal, openSpiritModal } from './modals.js';
-import { droneCard } from './drone-card.js';
+import { droneCard, droneTargetingStat } from './drone-card.js';
 import { rccCard } from './rcc-card.js';
 
-function weaponList(c, weapons, stashable) {
+// `extraFor(w)`: optional per-weapon element for the card (see weaponCard).
+function weaponList(c, weapons, stashable, extraFor = () => null) {
   const list = el('div', { class: 'list' });
-  for (const w of weapons) list.append(weaponCard(c, w, { stashable }));
+  for (const w of weapons) list.append(weaponCard(c, w, { stashable, extra: extraFor(w) }));
   return list;
 }
 
@@ -131,7 +132,7 @@ function dronesTab(container, c) {
     const card = droneCard(c, d);
     card.append(el('hr', { class: 'card-sep' }));
     card.append(el('div', { class: 'drone-weapons' }, [
-      weapons.length ? weaponList(c, weapons, false) : null,
+      weapons.length ? weaponList(c, weapons, false, (w) => droneTargetingStat(c, d, w)) : null,
       el('div', { class: 'row drone-add-weapon' }, [
         el('button', { onclick: () => openWeaponModal(c, { mount: d.name }) }, t('addWeapon')),
       ]),
