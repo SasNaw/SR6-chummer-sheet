@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readPersisted, serialize } from '../js/store.js';
+import {
+  readPersisted, serialize, loadState, saveState, loadReport, STORAGE_KEY, BACKUP_KEY, CORRUPT_KEY,
+} from '../js/store.js';
 
 const CHAR = { id: 'c1', name: 'Wraith', weapons: [], reserves: [], drones: [], spirits: [] };
 const good = (name = 'Wraith') => serialize({
@@ -75,4 +77,54 @@ test('readPersisted allows an intentionally empty saved state', () => {
   assert.equal(r.source, 'main');
   assert.equal(r.writable, true);
   assert.equal(r.corrupt, false);
+});
+
+// --- loadState / saveState against an in-memory localStorage -----------------
+
+// Minimal Storage stand-in; `failOn(key)` makes setItem throw for that key.
+function fakeStorage(initial = {}, { failOn = () => false, error = 'QuotaExceededError' } = {}) {
+  const data = new Map(Object.entries(initial));
+  return {
+    data,
+    getItem: (k) => (data.has(k) ? data.get(k) : null),
+    setItem: (k, v) => {
+      if (failOn(k)) throw Object.assign(new Error('fail'), { name: error });
+      data.set(k, String(v));
+    },
+    removeItem: (k) => data.delete(k),
+  };
+}
+
+test('an unreadable save with no usable backup is set aside, and saving works again', () => {
+  globalThis.localStorage = fakeStorage({ [STORAGE_KEY]: '{not json', [BACKUP_KEY]: 'also bad' });
+  assert.deepEqual(loadState().characters, []);
+  assert.equal(localStorage.getItem(CORRUPT_KEY), '{not json');
+  assert.equal(loadReport().quarantined, true);
+  assert.equal(loadReport().writable, true);
+  assert.deepEqual(saveState({ version: 1, characters: [CHAR], activeId: null }), { ok: true });
+  assert.equal(JSON.parse(localStorage.getItem(STORAGE_KEY)).characters[0].name, 'Wraith');
+});
+
+test('saving stays blocked when the unreadable save could not be set aside', () => {
+  globalThis.localStorage = fakeStorage({ [STORAGE_KEY]: '{not json' }, { failOn: (k) => k === CORRUPT_KEY });
+  loadState();
+  assert.equal(loadReport().writable, false);
+  assert.deepEqual(saveState({ version: 1, characters: [CHAR], activeId: null }), { ok: false, reason: 'blocked' });
+  assert.equal(localStorage.getItem(STORAGE_KEY), '{not json');
+});
+
+test('a failed backup write does not stop the save itself', () => {
+  globalThis.localStorage = fakeStorage({ [STORAGE_KEY]: good('Old') }, { failOn: (k) => k === BACKUP_KEY });
+  loadState();
+  assert.deepEqual(saveState({ version: 1, characters: [CHAR], activeId: null }), { ok: true });
+  assert.equal(JSON.parse(localStorage.getItem(STORAGE_KEY)).characters[0].name, 'Wraith');
+});
+
+test('a failed main write is reported as quota or write', () => {
+  globalThis.localStorage = fakeStorage({}, { failOn: (k) => k === STORAGE_KEY });
+  loadState();
+  assert.deepEqual(saveState({ version: 1, characters: [CHAR], activeId: null }), { ok: false, reason: 'quota' });
+  globalThis.localStorage = fakeStorage({}, { failOn: (k) => k === STORAGE_KEY, error: 'SecurityError' });
+  loadState();
+  assert.deepEqual(saveState({ version: 1, characters: [CHAR], activeId: null }), { ok: false, reason: 'write' });
 });

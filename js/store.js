@@ -110,14 +110,21 @@ export function loadState() {
     return lastLoad.state;
   }
 
-  const result = readPersisted(main, backup);
-  lastLoad = result;
-  saveBlocked = !result.writable;
+  let result = readPersisted(main, backup);
 
   if (result.corrupt && result.corruptText) {
     // Keep the wreckage under its own key; never let it be silently replaced.
-    try { localStorage.setItem(CORRUPT_KEY, result.corruptText); } catch { /* best effort */ }
+    // Once it is safely set aside, saving no longer endangers it, so an
+    // unrecoverable load is unblocked instead of leaving the app unable to save
+    // on every start.
+    try {
+      localStorage.setItem(CORRUPT_KEY, result.corruptText);
+      if (!result.writable) result = { ...result, writable: true, quarantined: true };
+    } catch { /* stays blocked: the unreadable bytes exist only in STORAGE_KEY */ }
   }
+
+  lastLoad = result;
+  saveBlocked = !result.writable;
   return result.state;
 }
 
@@ -131,9 +138,13 @@ export function loadReport() {
 export function saveState(state) {
   if (saveBlocked) return { ok: false, reason: 'blocked' };
   const text = serialize(state);
+  // The backup is best effort: when it doesn't fit (it doubles the space used),
+  // the save itself must still be attempted, since it may well fit.
   try {
     const previous = localStorage.getItem(STORAGE_KEY);
     if (previous) localStorage.setItem(BACKUP_KEY, previous);
+  } catch { /* keep the older backup */ }
+  try {
     localStorage.setItem(STORAGE_KEY, text);
     return { ok: true };
   } catch (e) {

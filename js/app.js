@@ -30,6 +30,7 @@ let storageWarning = (() => {
   const r = loadReport();
   if (!r.writable) return 'blocked';
   if (r.recovered) return 'recovered';
+  if (r.quarantined) return 'quarantined';
   return null;
 })();
 
@@ -65,7 +66,7 @@ export function goSheet(characterId) {
 }
 
 const WARNING_KEYS = {
-  blocked: 'storageBlocked', recovered: 'storageRecovered',
+  blocked: 'storageBlocked', recovered: 'storageRecovered', quarantined: 'storageQuarantined',
   quota: 'storageSaveFailed', write: 'storageSaveFailed',
 };
 
