@@ -11,12 +11,14 @@ für mehrere Charaktere, ohne App-Store, ohne Server.
 ## 1. Was die App kann
 
 - Mehrere Charaktere verwalten (auch aus dem Genesis-Charakterbogen importieren).
-- Pro Waffe die geladene Munition zählen: Feuermodi (SS/SA/BF/FA) per Knopf,
-  manuelles **+ / −**, **Setzen** und **Nachladen** aus passenden Reservepools.
+- Pro Waffe die geladene Munition zählen: Feuermodi (EM/HM/SM/AM) per Knopf,
+  manuelles **+ / −** und **Nachladen** aus passenden Reservepools.
 - Verschiedene Munitionstypen pro Waffentyp; Wechsel legt geladene Patronen
   zurück in ihren Pool.
-- Waffen in **Ausgerüstet / Verstaut** trennen und Drohnen mit eigener Bewaffnung
-  führen.
+- Waffen in **Ausgerüstet / Verstaut** trennen.
+- Drohnen mit Werten, Autosofts, Fertigkeiten, Zustandsmonitor und eigener
+  Bewaffnung führen, dazu die Riggerkonsole (RCC) mit Programmen und geslavten
+  Drohnen.
 - Bei magischen Charakteren: Geister beschweren, ihre Werte (abhängig von der
   Kraftstufe), Kräfte und **Dienste** verwalten.
 - Sprache **Deutsch / Englisch** umschaltbar (Standard: Englisch).
@@ -55,29 +57,24 @@ stellen. Die Einstellung wird gespeichert.
 
 ---
 
-## 3. Kataloge laden (Waffen & Geister)
+## 3. Kataloge laden (Waffen, Geister & Drohnen)
 
 Die App kennt nur wenige Waffen „ab Werk“. Für die echten Werte (Magazingrößen,
-Feuermodi, Munitionstypen) sowie für die Geister-Werte gibt es zwei
-**Katalog-Dateien**. Diese enthalten lizenziertes Regelmaterial und sind deshalb
-**nicht** Teil der App — sie werden **lokal auf dem Gerät** geladen.
+Feuermodi, Angriffswerte, Munitionstypen), die Geister-Werte und die
+Drohnen-Werte gibt es drei **Katalog-Dateien**. Diese enthalten lizenziertes
+Regelmaterial und sind deshalb **nicht** Teil der App — sie werden **lokal auf
+dem Gerät** geladen.
 
-### 3.1 Katalogdateien herunterladen
+### 3.1 Katalogdateien besorgen
 
-Die Dateien liegen in der Dropbox:
-
-**https://www.dropbox.com/home/Shadowrun%20Regelwerke/db?_p_luid=30255eea**
-
-Dort findest du:
+Die Dateien bekommst du **von deiner Gruppe** (sie werden privat geteilt, nicht
+über diese Seite):
 
 - `weapons-catalog.json` — Waffenkatalog (Waffen + Munitionstypen)
 - `spirits-catalog.json` — Geisterkatalog (Geistertypen, Werte, Kräfte)
+- `drones-catalog.json` — Drohnenkatalog (Drohnen, Autosofts, Riggerkonsolen)
 
-Beide Dateien auf das Gerät herunterladen, mit dem du die App nutzt.
-
-> Hinweis: Der obige Link öffnet die Dropbox-Ablage. Falls er bei dir nur die
-> eigene Dropbox-Startseite zeigt, lass dir von der Gruppe einen echten
-> **Freigabe-Link** zu den beiden Dateien geben.
+Die Dateien auf das Gerät herunterladen, mit dem du die App nutzt.
 
 ### 3.2 Kataloge in der App importieren
 
@@ -86,15 +83,23 @@ Beide Dateien auf das Gerät herunterladen, mit dem du die App nutzt.
    → Status zeigt z. B. „Waffenkatalog: 237 Waffen“.
 3. Auf **„Geisterkatalog laden“** tippen und `spirits-catalog.json` auswählen.
    → Status zeigt z. B. „Geisterkatalog: 6 Geister“.
+4. Auf **„Drohnenkatalog laden“** tippen und `drones-catalog.json` auswählen.
+   → Status zeigt „Drohnenkatalog: … Drohnen“.
 
 Die Kataloge bleiben auf dem Gerät gespeichert, bis du sie über **„Katalog
-löschen“** bzw. **„Geisterkatalog löschen“** wieder entfernst. Mit **„Waffe
-suchen (Katalog)“** kannst du beim Anlegen einer Waffe nach Namen suchen, und der
-**+ Geist**-Knopf ist nur aktiv, wenn ein Geisterkatalog geladen ist.
+löschen“**, **„Geisterkatalog löschen“** bzw. **„Drohnenkatalog löschen“** wieder
+entfernst. Mit **„Waffe suchen (Katalog)“** kannst du beim Anlegen einer Waffe
+nach Namen suchen, und der **+ Geist**-Knopf ist nur aktiv, wenn ein
+Geisterkatalog geladen ist.
 
 > Die Kataloge müssen **pro Gerät** einmal geladen werden (sie wandern nicht mit
 > der JSON-Sicherung mit). Nach einem Katalog-Update einfach die neue Datei
 > erneut laden.
+>
+> **Drohnenwerte kommen beim XML-Import:** Lade den Drohnenkatalog **vor** dem
+> Import der Charakter-XML. Wurde der Charakter ohne Katalog importiert (oder vor
+> diesem App-Update), fehlen Werte, Autosofts und RCC — dann die XML erneut
+> importieren.
 
 ---
 
@@ -105,9 +110,12 @@ Auf dem Startbildschirm:
 - **+ Neuer Charakter** — leeren Charakter anlegen (Name eingeben).
 - **Umbenennen** / **Löschen** — pro Charakter.
 - **XML importieren** — einen Charakter aus dem Genesis-Charakterbogen
-  (`.sr6char`-Export als XML) einlesen. Dabei werden Waffen (auch auf Drohnen),
-  Reservemunition und — sofern vorhanden — die magische Veranlagung übernommen.
-  Ist ein Waffenkatalog geladen, werden die Waffenwerte daraus ergänzt.
+  (`.sr6char`-Export als XML) einlesen. Dabei werden Waffen, Reservemunition,
+  Drohnen (mit Autosofts und ihren Waffen), die Riggerkonsole und — sofern
+  vorhanden — die magische Veranlagung übernommen. Geladene Kataloge ergänzen
+  Waffen- und Drohnenwerte; also die Kataloge **vor** dem Import laden.
+  Ein erneuter Import legt einen **neuen** Charakter an — der alte (mit
+  verschossener Munition usw.) bleibt bestehen.
 
 Tippe einen Charakter an, um seinen Bogen zu öffnen. Mit **‹** oben links geht es
 zurück zur Auswahl. Der zuletzt geöffnete Charakter wird beim nächsten Start
@@ -117,32 +125,35 @@ wieder angezeigt.
 
 ## 5. Der Charakterbogen
 
-Oben gibt es Reiter: **Waffen** und — bei magischen Charakteren — **Magie**.
-Der aktive Reiter ist farblich markiert (Waffen = bernstein, Magie = blau).
+Oben gibt es Reiter: **Waffen**, **Drohnen** und — bei magischen Charakteren —
+**Magie**. Der aktive Reiter ist farblich markiert (Waffen = bernstein,
+Drohnen = grün, Magie = blau). Rechts daneben sitzt der passende Knopf zum
+Hinzufügen (**+ Waffe** bzw. **+ Drohne**).
 
 ### 5.1 Waffen & Munition
 
-Jede Waffe ist eine Karte mit:
+Im Reiter **Waffen** stehen die getragenen Waffen. Jede Waffe ist eine Karte mit:
 
-- **Name** (oben) und Munitionszähler **geladen / Magazingröße**.
-- **Munitions-Auswahl** (Dropdown): zeigt die passenden Reservepools mit
-  Restmenge, z. B. „APDS (40)“. Hat der Waffentyp keinen Pool, erscheint das
-  Dropdown in **Warnrot** mit „(0)“.
-- **Feuermodi** (z. B. `SA (-1)`, `BF (-3)`, `FA (-6)`): ein Tipp zieht die
-  entsprechende Patronenzahl ab.
-- **− / +**: einzelne Patrone abziehen/hinzufügen. **Setzen**: geladene Menge
-  direkt eingeben.
+- **Name** (oben) mit **✎** (Waffe bearbeiten) und **🗑** (Waffe entfernen, mit
+  Rückfrage).
+- **AW** — Angriffswert für die fünf Entfernungsstufen; „—“ heißt: kein Wert in
+  dieser Entfernung.
+- Munitionszähler **geladen / Magazingröße** und der geladene Munitionstyp.
+- **Wechseln** — Munitionstyp wechseln: Pool aus der Liste wählen. Die noch
+  geladenen Patronen wandern zuerst zurück in ihren Pool, dann wird aus dem
+  gewählten Pool geladen. Hat der Waffentyp keinen Pool, ist der Knopf
+  **warnrot**.
+- **Feuermodi** (z. B. `EM (-1)`, `HM (-2)`, `SM (-4)`, `AM (-10)`): ein Tipp
+  zieht die entsprechende Patronenzahl ab.
+- **− / +**: einzelne Patrone abziehen/hinzufügen.
 - **Nachladen**: füllt den geladenen Typ aus dem Reservepool bis zur
-  Magazingröße auf. Ein Wechsel des Munitionstyps über das Dropdown legt die noch
-  geladenen Patronen zuerst zurück in ihren Pool und lädt dann den neuen Typ.
-- **✎** (neben dem Namen): einen **Anzeigenamen/Alias** vergeben. Anzeige dann
-  „Alias (Waffenname)“.
-- **🗑**: Waffe entfernen.
+  Magazingröße auf.
 
-**Waffe hinzufügen:** In der Sektion **Waffen** auf **+ Waffe** tippen. Im Dialog:
-Name, Waffentyp, max. Magazingröße und Feuermodi wählen. Mit geladenem
-Waffenkatalog kannst du über **„Waffe suchen (Katalog)“** den Namen suchen — Typ,
-Kapazität und Feuermodi werden automatisch ausgefüllt.
+**Waffe hinzufügen / bearbeiten:** **+ Waffe** bzw. **✎** öffnet denselben Dialog:
+Name, optionaler **Alias** (Anzeige dann „Alias (Waffenname)“), Waffentyp,
+Magazingröße, Feuermodi und Angriffswerte. Mit geladenem Waffenkatalog kannst du
+über **„Waffe suchen (Katalog)“** den Namen suchen — die Werte werden automatisch
+ausgefüllt.
 
 **Ausgerüstet / Verstaut:** Getragene Waffen sind in **Ausgerüstet** und
 **Verstaut** unterteilt. Die Checkbox unten rechts auf der Karte schiebt eine
@@ -150,16 +161,38 @@ Waffe zwischen beiden — rein organisatorisch, die Karte bleibt voll bedienbar.
 
 ### 5.2 Drohnen
 
-In der Sektion **Drohnen**:
+Der Reiter **Drohnen** zeigt von oben nach unten:
 
-- **+ Drohne** — neue Drohne anlegen (Name).
-- Jede Drohne hat eine eigene Unterüberschrift mit **+ Waffe** (Waffe direkt an
-  dieser Drohne montieren) und **🗑** zum Löschen der Drohne (inkl. ihrer Waffen,
-  mit Rückfrage). Drohnenwaffen haben keine Ausgerüstet-Checkbox.
+- **RCCs** — die Riggerkonsole (falls vorhanden) mit ihren Werten und:
+  - **Aktiv / Installiert**: Programme und Autosofts der Konsole. Ein Tipp
+    startet bzw. beendet ein Programm; mehr als die Programmplätze erlauben
+    lassen sich nicht starten.
+  - **Geslavte Drohnen** (z. B. 5/12, Maximum = Gerätestufe × 3): ein Tipp auf
+    eine Drohne slavt sie an die Konsole bzw. löst sie. Nur geslavte Drohnen
+    nutzen die aktiven Autosofts der Konsole.
+- **Drohnen** — eine Karte pro Drohne mit **✎** (bearbeiten) und **🗑** (löschen
+  inkl. ihrer Waffen, mit Rückfrage):
+  - **Werte** (Handling, Beschleunigung, Rumpf, Panzerung, Pilot, Sensor, …).
+  - **Initiative** sowie die **Autosofts** der Drohne und der Konsole
+    („Autosofts (RCC)“) und laufende **Programme**.
+  - **Fertigkeiten**: Ausweichen (Pilot + Ausweichen), Wahrnehmung
+    (Sensor + Clearsight), Steuern (Pilot + Manövrieren), Heimlichkeit
+    (Pilot + Stealth). Fehlt das Autosoft, zählt es als 0.
+  - **AW** (Manövrieren + Sensor), **VW** (Manövrieren + Panzerung) und
+    **Schaden widerstehen** (Rumpf; Steel Lynx +3 für die Keramikpanzerung).
+  - **Zustandsmonitor**: Kästchen antippen, um Schaden einzutragen.
+  - Darunter die **Waffen der Drohne** als eigene Karten (wie im Reiter Waffen,
+    ohne Ausgerüstet-Checkbox). Hat die Drohne ein Zielerfassungs-Autosoft für
+    diese Waffe, steht dort **Zielerfassung** (Sensor + Zielerfassung).
+    **+ Waffe** montiert eine weitere Waffe an dieser Drohne.
+- **Reservemunition** — dieselben Pools wie im Reiter Waffen (siehe 5.3).
+
+Ohne Drohnenkatalog beim Import zeigt eine Drohne statt der Werte einen Hinweis
+(siehe 3.2).
 
 ### 5.3 Reservemunition
 
-In der Sektion **Reservemunition**:
+In der Sektion **Reservemunition** (in den Reitern Waffen und Drohnen):
 
 - **+ Pool** — Pool anlegen: Waffentyp, Munitionstyp und Menge (nur Zahlen).
   Ein bestehender Pool gleichen Typs wird automatisch zusammengeführt (mit
@@ -222,13 +255,22 @@ Danach erscheint eine **Geist-Karte** mit:
 
 ## 8. Tipps & Fehlerbehebung
 
-- **Nach einem Update siehst du noch die alte Version?** Seite neu laden (ggf.
-  „hart“ neu laden / Cache leeren). Als installierte App: einmal online starten.
-- **Munitions-Auswahl ist rot mit „(0)“:** Für diesen Waffentyp gibt es noch
-  keinen Reservepool — unter **Reservemunition** mit **+ Pool** anlegen.
+- **Nach einem Update siehst du noch die alte Version?** Die App lädt Updates im
+  Hintergrund — beim **nächsten** Öffnen bzw. Neuladen ist die neue Version da.
+  Als installierte App: einmal online starten, schließen, erneut öffnen.
+- **„Wechseln“ ist rot:** Für diesen Waffentyp gibt es noch keinen
+  Reservepool — unter **Reservemunition** mit **+ Pool** anlegen.
+- **Drohne zeigt „Keine Werte“ oder es fehlt die RCC:** Drohnenkatalog laden und
+  die Charakter-XML erneut importieren (siehe 3.2).
+- **Roter Hinweis oben zum Speicher:** Die App konnte nicht speichern (Speicher
+  voll oder gesperrt) oder musste gespeicherte Daten wiederherstellen. Sofort per
+  **JSON exportieren** sichern; bei „App startet leer“ den letzten JSON-Export
+  importieren.
 - **„+ Geist“ ist ausgegraut:** Es ist (noch) kein Geisterkatalog geladen — siehe
   Abschnitt 3.
 - **Daten weg nach Browser-Reinigung?** Der lokale Speicher wurde gelöscht.
-  Deshalb regelmäßig per **JSON exportieren** sichern.
+  Deshalb regelmäßig per **JSON exportieren** sichern. Auf dem iPhone löscht
+  Safari die Daten einer Webseite, die 7 Tage nicht geöffnet wurde — als App auf
+  dem Home-Bildschirm (siehe 2.2) passiert das nicht.
 - **Anderes Gerät/Browser:** Daten über JSON übertragen und die Kataloge dort
   einmalig neu laden. `localhost` und die Online-Adresse haben getrennte Speicher.
