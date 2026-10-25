@@ -335,6 +335,13 @@ export function rccProgramSlots(rcc) {
   return typeof n === 'number' ? n : null;
 }
 
+// How many drones the console can have slaved: Device Rating × 3; null when
+// the Device Rating is unknown.
+export function rccMaxSlaves(rcc) {
+  const n = rcc && rcc.stats && rcc.stats.deviceRating;
+  return typeof n === 'number' ? n * 3 : null;
+}
+
 // Starts an installed program; no-op when it is already running, unknown, or
 // every program slot is taken.
 export function startRccProgram(character, softwareId) {
@@ -505,6 +512,29 @@ export function droneSkills(character, drone) {
       .map((s) => s.rating ?? 0));
     return { key, value: typeof base === 'number' ? base + rating : null };
   });
+}
+
+// Bonus to damage resistance by drone ref. The Steel Lynx's ceramic armor
+// isn't in the imported data, so it is added here (ceiling(rating / 4) = 3).
+const DAMAGE_RESISTANCE_BONUS = { steel_lynx_combat_drone: 3 };
+
+// A drone's attack rating (Maneuvering autosoft + Sensor), defense rating
+// (Maneuvering + Armor) and damage resistance (Body, plus any per-model bonus).
+// null without stats; a value whose attribute is missing is null.
+export function droneCombatValues(character, drone) {
+  if (!drone.stats) return null;
+  const maneuvering = Math.max(0, ...droneSoftware(character, drone).autosofts
+    .filter((s) => s.ref === 'maneuvering')
+    .map((s) => s.rating ?? 0));
+  const plus = (attribute, bonus) => {
+    const base = drone.stats[attribute];
+    return typeof base === 'number' ? base + bonus : null;
+  };
+  return {
+    attackRating: plus('sensor', maneuvering),
+    defenseRating: plus('armor', maneuvering),
+    damageResistance: plus('body', DAMAGE_RESISTANCE_BONUS[drone.ref] ?? 0),
+  };
 }
 
 // A drone's Targeting skill with one of its weapons: Sensor + the highest rating

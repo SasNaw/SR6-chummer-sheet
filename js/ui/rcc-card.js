@@ -1,7 +1,7 @@
 import { el } from './dom.js';
 import { localizedPair } from '../spirit-catalog.js';
 import {
-  rccProgramSlots, startRccProgram, stopRccProgram, toggleRccSlave, droneBaseName,
+  rccProgramSlots, rccMaxSlaves, startRccProgram, stopRccProgram, toggleRccSlave, droneBaseName,
 } from '../model.js';
 import { softwareLabel } from './drone-card.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
@@ -66,12 +66,14 @@ export function rccCard(c) {
   ]));
   card.append(el('div', { class: 'rcc-section' }, [heading(t('installedPrograms')), chips(installed, false)]));
 
-  // Slaved drones: one toggle chip per drone.
+  // Slaved drones: one toggle chip per drone; the heading counts them against
+  // the console's maximum (Device Rating × 3), or just counts them without it.
   const drones = c.drones ?? [];
   const slavedCount = drones.filter((d) => rcc.slaved.includes(d.id)).length;
+  const maxSlaves = rccMaxSlaves(rcc);
   card.append(el('hr', { class: 'card-sep' }));
   card.append(el('div', { class: 'rcc-section' }, [
-    heading(`${t('slavedDrones')} (${slavedCount}/${drones.length})`),
+    heading(maxSlaves != null ? `${t('slavedDrones')} (${slavedCount}/${maxSlaves})` : `${t('slavedDrones')} (${slavedCount})`),
     drones.length
       ? el('div', { class: 'chips' }, drones.map((d) => {
         const on = rcc.slaved.includes(d.id);

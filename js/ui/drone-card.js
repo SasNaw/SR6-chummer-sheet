@@ -2,7 +2,7 @@ import { el } from './dom.js';
 import { localizedPair } from '../spirit-catalog.js';
 import {
   removeDrone, droneConditionMonitor, setDroneDamage, damageAfterBoxClick,
-  droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting, DRONE_SKILLS,
+  droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting, droneCombatValues, DRONE_SKILLS,
 } from '../model.js';
 import { openDroneModal } from './modals.js';
 import { updateCharacter, uiLang } from './sheet-common.js';
@@ -36,6 +36,18 @@ const SKILL_LABELS = {
     piloting: ['Steuern', 'Pilot + Manövrieren'], stealth: ['Heimlichkeit', 'Pilot + Stealth'],
     targeting: ['Zielerfassung', 'Sensor + Zielerfassung'],
   },
+};
+
+// droneCombatValues keys in display order: label and formula tooltip.
+const COMBAT_LABELS = {
+  en: [
+    ['attackRating', 'AR', 'Maneuvering + Sensor'], ['defenseRating', 'DR', 'Maneuvering + Armor'],
+    ['damageResistance', 'Resist damage', 'Body'],
+  ],
+  de: [
+    ['attackRating', 'AW', 'Manövrieren + Sensor'], ['defenseRating', 'VW', 'Manövrieren + Panzerung'],
+    ['damageResistance', 'Schaden widerstehen', 'Rumpf'],
+  ],
 };
 
 const SIZE_LABELS = {
@@ -168,6 +180,17 @@ export function droneCard(c, drone) {
     card.append(el('hr', { class: 'card-sep' }));
     card.append(el('div', { class: 'spirit-stats drone-skills' },
       skills.map(({ key, value }) => skillStat(key, DRONE_SKILLS.find((s) => s.key === key).attribute, value, lang))));
+  }
+
+  // Attack rating, defense rating, damage resistance: in the attributes' style.
+  const combat = droneCombatValues(c, drone);
+  if (combat) {
+    card.append(el('hr', { class: 'card-sep' }));
+    card.append(el('div', { class: 'spirit-stats drone-combat' },
+      (COMBAT_LABELS[lang] || COMBAT_LABELS.en).map(([key, label, formula]) => el('div', { class: 'stat', title: formula }, [
+        el('span', { class: 'stat-label' }, `${label}: `),
+        el('span', { class: 'stat-val' }, String(combat[key] ?? '–')),
+      ]))));
   }
 
   // Condition monitor: full width (no services column). Same box behaviour as

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createCharacter, createDrone, addDrone, removeDrone,
   createRcc, initRccState, startRccProgram, stopRccProgram, toggleRccSlave,
-  droneSoftware, normalizeCharacterDrones,
+  droneSoftware, normalizeCharacterDrones, rccMaxSlaves,
 } from '../js/model.js';
 
 const sw = (ref, kind = 'autosoft', id = ref) => ({ id, ref, kind, name: { en: ref, de: null }, rating: 7, target: null });
@@ -100,4 +100,11 @@ test('migration: the earlier rccSoftware list becomes an RCC with defaults', () 
   assert.deepEqual(c.rcc.running, [c.rcc.software[0].id]);
   assert.deepEqual(c.rcc.slaved, ['d1']);
   assert.equal(c.rcc.stats, null);
+});
+
+test('rccMaxSlaves: Device Rating x 3; null without stats or a Device Rating', () => {
+  assert.equal(rccMaxSlaves({ stats: { deviceRating: 4 } }), 12);
+  assert.equal(rccMaxSlaves({ stats: {} }), null);
+  assert.equal(rccMaxSlaves({ stats: null }), null);
+  assert.equal(rccMaxSlaves(null), null);
 });

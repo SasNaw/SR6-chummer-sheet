@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createCharacter, createDrone, createWeapon, addDrone,
-  droneConditionMonitor, setDroneDamage, renameDrone, droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting,
+  droneConditionMonitor, setDroneDamage, renameDrone, droneInitiative, droneSoftware, droneBaseName, droneSkills, droneTargeting, droneCombatValues,
   MOUNT_ROUNDS, mountSize,
 } from '../js/model.js';
 
@@ -118,6 +118,25 @@ test('droneTargeting: Sensor + the highest Targeting rating bound to that weapon
   assert.equal(droneTargeting(c, { ...drone, stats: null }, { name: 'Roomsweeper' }), null);
   // Targeting is not one of the drone-level skills.
   assert.equal(droneSkills(c, drone).length, 4);
+});
+
+test('droneCombatValues: AR = Maneuvering + Sensor, DR = Maneuvering + Armor, damage resistance = Body', () => {
+  const sw = (ref, rating) => ({ id: ref, ref, kind: 'autosoft', name: { en: ref, de: null }, rating, target: null });
+  const drone = { id: 'd', ref: 'mct_fly_spy', stats: { sensor: 2, armor: 4, body: 3 }, software: [sw('maneuvering', 5)] };
+  assert.deepEqual(droneCombatValues({}, drone), { attackRating: 7, defenseRating: 9, damageResistance: 3 });
+  // Without a Maneuvering autosoft it counts as 0.
+  assert.deepEqual(droneCombatValues({}, { ...drone, software: [] }), { attackRating: 2, defenseRating: 4, damageResistance: 3 });
+});
+
+test('droneCombatValues: a Steel Lynx resists damage with Body + 3 (its ceramic armor)', () => {
+  const drone = { id: 'd', ref: 'steel_lynx_combat_drone', stats: { sensor: 2, armor: 4, body: 8 }, software: [] };
+  assert.equal(droneCombatValues({}, drone).damageResistance, 11);
+});
+
+test('droneCombatValues: null without stats; a missing attribute leaves that value null', () => {
+  assert.equal(droneCombatValues({}, { id: 'd', stats: null }), null);
+  assert.deepEqual(droneCombatValues({}, { id: 'd', stats: { body: 3 } }),
+    { attackRating: null, defenseRating: null, damageResistance: 3 });
 });
 
 test('droneSkills: null without stats; a missing attribute leaves that skill null', () => {

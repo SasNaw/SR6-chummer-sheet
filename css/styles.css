@@ -239,6 +239,9 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; }
    two columns, since "AUSWEICHEN (PIL)" is too long for four. */
 .spirit-stats.drone-skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .spirit-stats.drone-skills .stat-label { min-width: 0; }
+/* Drone AW | VW | Schaden widerstehen: columns sized to their content and
+   spread evenly across the row (equal thirds would wrap the long label). */
+.spirit-stats.drone-combat { grid-template-columns: repeat(3, max-content); justify-content: space-between; }
 /* Drones tab: the drone card also holds its weapon cards and + Weapon. The
    weapon cards are inset — darker background, extra padding — so they read as
    part of their drone; the drone cards get more space between them. */
